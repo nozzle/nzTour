@@ -62,7 +62,10 @@ module.factory('nzTour', ["$q", "$rootScope", "$compile", "$timeout", function($
     }
 
     function stop() {
-        return toggleElements(false);
+        return toggleElements(false)
+            .then(function() {
+                return finish(false);
+            });
     }
 
     function pause() {
@@ -199,10 +202,14 @@ module.factory('nzTour', ["$q", "$rootScope", "$compile", "$timeout", function($
         return d.promise;
     }
 
-    function finish() {
+    function finish(forced) {
         return stop()
             .then(function() {
-                service.current.promise.resolve();
+                if (forced) {
+                    service.current.promise.reject();
+                } else {
+                    service.current.promise.resolve();
+                }
                 service.current = false;
                 return true;
             });
