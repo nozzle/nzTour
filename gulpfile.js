@@ -40,6 +40,7 @@ function jsTask() {
         .pipe(gulp.dest('./dist/'));
 
     return gulp.src('./src/nz-tour.js')
+        .pipe(uglify())
         .pipe(gulp.dest('./dist/'));
 }
 
