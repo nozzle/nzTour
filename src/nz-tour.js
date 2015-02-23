@@ -14,6 +14,7 @@ module.factory('nzTour', function($q, $rootScope, $compile, $timeout) {
                 clickExit: false,
                 color: 'rgba(0,0,0,.7)'
             },
+            dark: false,
             container: 'body',
             scrollBox: 'body',
             previousText: 'Previous',
@@ -185,9 +186,8 @@ module.factory('nzTour', function($q, $rootScope, $compile, $timeout) {
     function checkHasNext() {
         var d = $q.defer();
         if (service.current.step == service.current.tour.steps.length - 1) {
-            d.reject();
             finish();
-            return d.promise;
+            d.reject();
         }
         d.resolve();
         return d.promise;
@@ -201,7 +201,7 @@ module.factory('nzTour', function($q, $rootScope, $compile, $timeout) {
     }
 
     function finish() {
-        return stop()
+        toggleElements(false)
             .then(function() {
                 service.current.promise.resolve();
                 service.current = false;
@@ -295,6 +295,11 @@ module.directive('nzTour', function($q, $timeout, $window) {
             // Mask Events?
             masks.all.css('pointer-events', $scope.current.tour.config.mask.clickThrough ? 'none' : 'all');
 
+            // Dark Box?
+            if ($scope.current.tour.config.dark) {
+                box.addClass('dark-box');
+                margin = 7;
+            }
 
             wrap.add(box).add(tip).css('transition', 'all ' + $scope.current.tour.config.animationDuration + 'ms ease');
             masks.top.add(masks.right).add(masks.bottom).add(masks.left).css({
@@ -341,8 +346,8 @@ module.directive('nzTour', function($q, $timeout, $window) {
                     step: step,
                     length: $scope.current.tour.steps.length,
                     content: $scope.current.tour.steps[step].content,
-                    previousText: $scope.current.tour.steps[step].previousText ? $scope.current.tour.steps[step].previousText : $scope.current.tour.config.previousText,
-                    nextText: step == $scope.current.tour.steps.length ? $scope.current.tour.steps[step].finishText : ($scope.current.tour.steps[step].nextText ? $scope.current.tour.steps[step].nextText : $scope.current.tour.config.nextText)
+                    previousText: $scope.current.tour.config.previousText,
+                    nextText: step == $scope.current.tour.steps.length - 1 ? $scope.current.tour.config.finishText : $scope.current.tour.config.nextText
                 };
                 return findTarget($scope.current.tour.steps[step].target)
                     .then(scrollToTarget)
@@ -437,8 +442,8 @@ module.directive('nzTour', function($q, $timeout, $window) {
                 var parentElement = angular.element($scope.current.tour.config.container);
                 var child = {
                     pos: target.offset(),
-                    width: target.width(),
-                    height: target.height(),
+                    width: target.outerWidth(),
+                    height: target.outerHeight(),
                 };
                 var parent = {
                     pos: parentElement.offset(),

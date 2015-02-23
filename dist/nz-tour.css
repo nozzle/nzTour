@@ -45,6 +45,72 @@ nz-tour #nzTour-box {
   -ms-transform: scale(1);
   transform: scale(1);
 }
+nz-tour #nzTour-box.dark-box {
+  background: rgba(0,0,0,0.8);
+  color: #fff;
+}
+nz-tour #nzTour-box.dark-box #nzTour-close {
+  background: #ec1d18;
+}
+nz-tour #nzTour-box.dark-box #nzTour-close:hover {
+  background: #ee342f;
+}
+nz-tour #nzTour-box.dark-box #nzTour-length {
+  background: #fff;
+  color: #969696;
+}
+nz-tour #nzTour-box.dark-box #nzTour-tip.left {
+  left: 5px;
+}
+nz-tour #nzTour-box.dark-box #nzTour-tip.center {
+  left: 50%;
+  -webkit-transform: translate(-50%, 0);
+  -moz-transform: translate(-50%, 0);
+  -o-transform: translate(-50%, 0);
+  -ms-transform: translate(-50%, 0);
+  transform: translate(-50%, 0);
+}
+nz-tour #nzTour-box.dark-box #nzTour-tip.right {
+  right: 5px;
+}
+nz-tour #nzTour-box.dark-box #nzTour-tip.side.center {
+  top: 50%;
+  -webkit-transform: translate(0, -50%);
+  -moz-transform: translate(0, -50%);
+  -o-transform: translate(0, -50%);
+  -ms-transform: translate(0, -50%);
+  transform: translate(0, -50%);
+}
+nz-tour #nzTour-box.dark-box #nzTour-tip.side.top {
+  top: 5px;
+}
+nz-tour #nzTour-box.dark-box #nzTour-tip.side.bottom {
+  bottom: 5px;
+}
+nz-tour #nzTour-box.dark-box #nzTour-tip.top {
+  top: -5px;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 5px solid rgba(0,0,0,0.8);
+}
+nz-tour #nzTour-box.dark-box #nzTour-tip.bottom {
+  bottom: -5px;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid rgba(0,0,0,0.8);
+}
+nz-tour #nzTour-box.dark-box #nzTour-tip.side.left {
+  left: -10px;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-right: 5px solid rgba(0,0,0,0.8);
+}
+nz-tour #nzTour-box.dark-box #nzTour-tip.side.right {
+  right: -10px;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 5px solid rgba(0,0,0,0.8);
+}
 nz-tour #nzTour-tip {
   position: absolute;
   display: block;
@@ -55,6 +121,34 @@ nz-tour #nzTour-tip.hidden {
   opacity: 0;
   -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";
   filter: alpha(opacity=0);
+}
+nz-tour #nzTour-tip.left {
+  left: 5px;
+}
+nz-tour #nzTour-tip.center {
+  left: 50%;
+  -webkit-transform: translate(-50%, 0);
+  -moz-transform: translate(-50%, 0);
+  -o-transform: translate(-50%, 0);
+  -ms-transform: translate(-50%, 0);
+  transform: translate(-50%, 0);
+}
+nz-tour #nzTour-tip.right {
+  right: 5px;
+}
+nz-tour #nzTour-tip.side.center {
+  top: 50%;
+  -webkit-transform: translate(0, -50%);
+  -moz-transform: translate(0, -50%);
+  -o-transform: translate(0, -50%);
+  -ms-transform: translate(0, -50%);
+  transform: translate(0, -50%);
+}
+nz-tour #nzTour-tip.side.top {
+  top: 5px;
+}
+nz-tour #nzTour-tip.side.bottom {
+  bottom: 5px;
 }
 nz-tour #nzTour-tip.top {
   top: -5px;
@@ -68,15 +162,6 @@ nz-tour #nzTour-tip.bottom {
   border-right: 5px solid transparent;
   border-top: 5px solid #fff;
 }
-nz-tour #nzTour-tip.left {
-  left: 5%;
-}
-nz-tour #nzTour-tip.center {
-  left: 50%;
-}
-nz-tour #nzTour-tip.right {
-  left: 95%;
-}
 nz-tour #nzTour-tip.side.left {
   left: -10px;
   border-top: 5px solid transparent;
@@ -88,20 +173,6 @@ nz-tour #nzTour-tip.side.right {
   border-top: 5px solid transparent;
   border-bottom: 5px solid transparent;
   border-left: 5px solid #fff;
-}
-nz-tour #nzTour-tip.side.top {
-  top: 5px;
-}
-nz-tour #nzTour-tip.side.bottom {
-  bottom: 5px;
-}
-nz-tour #nzTour-tip.side.center {
-  top: 50%;
-  -webkit-transform: translate(0, -50%);
-  -moz-transform: translate(0, -50%);
-  -o-transform: translate(0, -50%);
-  -ms-transform: translate(0, -50%);
-  transform: translate(0, -50%);
 }
 nz-tour #nzTour-close {
   position: absolute;
