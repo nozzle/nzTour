@@ -13,7 +13,7 @@ Touring and on-boarding made simple for AngularJS.
 ## Installation & Usage
 
 1.	`$ bower/npm install nz-tour --save`
-2.  jQuery before Angular
+2.  Include jQuery (before Angular)
 3.	Include `dist/nz-tour.min.js` and `dist/nz-tour.min.css` files.
 4.	Add `nzTour` as a dependency in your app.
 5.	Inject the `nzTour` service anywhere in your app.
