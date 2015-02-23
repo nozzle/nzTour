@@ -2,6 +2,7 @@ var gulp = require('gulp');
 var rename = require('gulp-rename');
 var uglify = require('gulp-uglifyjs');
 var stylus = require('gulp-stylus');
+var ngAnnotate = require('gulp-ng-annotate');
 var nib = require('nib');
 
 
@@ -33,6 +34,7 @@ function stylusTask() {
 
 function jsTask() {
     gulp.src('./src/nz-tour.js')
+        .pipe(ngAnnotate())
         .pipe(uglify())
         .pipe(rename('nz-tour.min.js'))
         .pipe(gulp.dest('./dist/'));
