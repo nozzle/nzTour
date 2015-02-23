@@ -1,0 +1,25 @@
+{
+    "name": "nz-tour",
+    "version": "1.0.0",
+    "description": "",
+    "main": ["dist/nz-tour.min.js", "dist/nz-tour.min.css"],
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "http://github.com/nozzle/nz-tour.git"
+    },
+    "author": "Tanner Linsley <tannerlinsley@gmail.com>",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/nozzle/nz-tour/issues"
+    },
+    "homepage": "https://github.com/nozzle/nz-tour",
+    "dependencies": {
+        "gulp-rename": "^1.2.0",
+        "gulp-stylus": "^2.0.1",
+        "gulp-uglifyjs": "^0.6.0",
+        "nib": "^1.1.0"
+    }
+}
