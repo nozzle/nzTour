@@ -10,12 +10,13 @@ Touring and on-boarding made simple for AngularJS.
 *	Promise Driven Events & Hooks (Because we <3 Angular)
 *	nzTour doesn't touch your DOM (more info below)
 
-## Installation
+## Installation & Usage
 
 1.	`$ bower/npm install nz-tour --save`
-2.	Include `dist/nz-tour.min.js` and `dist/nz-tour.min.css` files.
-3.	Add `nzTour` as a dependency in your app.
-4.	Inject the `nzTour` service anywhere in your app.
+2.  jQuery before Angular
+3.	Include `dist/nz-tour.min.js` and `dist/nz-tour.min.css` files.
+4.	Add `nzTour` as a dependency in your app.
+5.	Inject the `nzTour` service anywhere in your app.
 
 ## Simple Usage
 
