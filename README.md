@@ -1,7 +1,7 @@
 # nzTour
 Touring and on-boarding made simple for AngularJS.
 
-## [Awesome Demo](http://nozzle.github.io/nzTour/)
+## [Awesome Demo](http://nozzle.github.io/nzTour)
 
 ## Features
 
@@ -55,17 +55,18 @@ Defaults:
 var tour = {
 	config: {
         mask: {
-            visible: true,
-            clickThrough: false,
-            clickExit: false,
-            color: 'rgba(0,0,0,.7)'
+            visible: true, // Shows the element mask
+            clickThrough: false, // Allows the user to interact with elements beneath the mask
+            clickExit: false, // Exit the tour when the user clicks on the mask
+            color: 'rgba(0,0,0,.7)' // The mask color
         },
-        container: 'body',
-        scrollBox: 'body',
+        container: 'body', // The container to mask
+        scrollBox: 'body', // The container to scroll when searching for elements
         previousText: 'Previous',
         nextText: 'Next',
         finishText: 'Finish',
-        animationDuration: 400,
+        animationDuration: 400, // Animation Duration for the box and mask
+        dark: false // Dark mode (Works great with `mask.visible = false`)
     },
 	steps: []
 }
