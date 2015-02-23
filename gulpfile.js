@@ -40,7 +40,7 @@ function jsTask() {
         .pipe(gulp.dest('./dist/'));
 
     return gulp.src('./src/nz-tour.js')
-        .pipe(uglify())
+        .pipe(ngAnnotate())
         .pipe(gulp.dest('./dist/'));
 }
 
