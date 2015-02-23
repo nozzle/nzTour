@@ -18,6 +18,7 @@ module.factory('nzTour', function($q, $rootScope, $compile, $timeout) {
             scrollBox: 'body',
             previousText: 'Previous',
             nextText: 'Next',
+            finishText: 'Finish',
             animationDuration: 400,
         },
         current: false,
@@ -250,7 +251,7 @@ module.directive('nzTour', function($q, $timeout, $window) {
             '        </div>',
             '    </div>',
             '</div>',
-            '<div class="nzTour-masks">',
+            '<div class="nzTour-masks" ng-show="current.tour.config.mask.visible" ng-click="tryStop()>',
             '    <div class="mask top"></div>',
             '    <div class="mask right"></div>',
             '    <div class="mask bottom"></div>',
@@ -284,6 +285,10 @@ module.directive('nzTour', function($q, $timeout, $window) {
                 vMargin = margin + 'px 0',
                 hMargin = '0 ' + margin + 'px';
 
+            // Mask Events?
+            masks.all.css('pointer-events', $scope.current.tour.config.mask.clickThrough ? 'none' : 'all');
+
+
             wrap.add(box).add(tip).css('transition', 'all ' + $scope.current.tour.config.animationDuration + 'ms ease');
             masks.top.add(masks.right).add(masks.bottom).add(masks.left).css({
                 'transition': 'all ' + $scope.current.tour.config.animationDuration + 'ms ease',
@@ -301,6 +306,20 @@ module.directive('nzTour', function($q, $timeout, $window) {
             angular.element($window).on('resize', onWindowScrollDebounced);
             scrollBox.on('scroll', onWindowScrollDebounced);
 
+            $scope.tryStop = function() {
+                if ($scope.current.tour.config.mask.clickExit) {
+                    $scope.stop();
+                }
+            };
+
+
+
+
+
+
+
+
+
             function onWindowScroll() {
                 if (scrolling) {
                     return;
@@ -316,7 +335,7 @@ module.directive('nzTour', function($q, $timeout, $window) {
                     length: $scope.current.tour.steps.length,
                     content: $scope.current.tour.steps[step].content,
                     previousText: $scope.current.tour.steps[step].previousText ? $scope.current.tour.steps[step].previousText : $scope.current.tour.config.previousText,
-                    nextText: $scope.current.tour.steps[step].nextText ? $scope.current.tour.steps[step].nextText : $scope.current.tour.config.nextText
+                    nextText: step == $scope.current.tour.steps.length ? $scope.current.tour.steps[step].finishText : ($scope.current.tour.steps[step].nextText ? $scope.current.tour.steps[step].nextText : $scope.current.tour.config.nextText)
                 };
                 return findTarget($scope.current.tour.steps[step].target)
                     .then(scrollToTarget)
