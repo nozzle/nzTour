@@ -13,7 +13,7 @@ Touring and on-boarding made simple for AngularJS.
 ## Installation
 
 1.	`$ bower/npm install nz-tour --save`
-2.	Include `dist/nz-tour.min.js` and 'dist/nz-tour.min.css' files.
+2.	Include `dist/nz-tour.min.js` and `dist/nz-tour.min.css` files.
 3.	Add `nzTour` as a dependency in your app.
 4.	Inject the `nzTour` service anywhere in your app.
 
@@ -75,6 +75,7 @@ var tour = {
 ####.start(tour) - Starts a Tour
 Params:
 *	*tour*: Tour Object
+
 Returns:
 *	Promise that resolves when the tour is finished and rejected when aborted.
 
@@ -96,6 +97,7 @@ Returns:
 ####.gotoStep(step): - Goes to a specific step in the tour
 Params:
 *	*step*: The number of the step starting at 1,2,3...
+
 Returns:
 *	Promise that resolves when the specific step is reached
 
