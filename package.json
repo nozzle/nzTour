@@ -1,30 +1,30 @@
 {
-  "name": "nz-tour",
-  "version": "0.9.0",
-  "description": "Touring and on-boarding made simple for AngularJS",
-  "main": [
-    "dist/nz-tour.min.js",
-    "dist/nz-tour.min.css"
-  ],
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "http://github.com/nozzle/nzTour.git"
-  },
-  "author": "Tanner Linsley <tannerlinsley@gmail.com>",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/nozzle/nzTour/issues"
-  },
-  "homepage": "https://github.com/nozzle/nzTour",
-  "dependencies": {
-    "gulp": "^3.8.11",
-    "gulp-ng-annotate": "^0.5.2",
-    "gulp-rename": "^1.2.0",
-    "gulp-stylus": "^2.0.1",
-    "gulp-uglifyjs": "^0.6.0",
-    "nib": "^1.1.0"
-  }
+    "name": "nz-tour",
+    "version": "0.9.1",
+    "description": "Touring and on-boarding made simple for AngularJS",
+    "main": [
+        "dist/nz-tour.min.js",
+        "dist/nz-tour.min.css"
+    ],
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "http://github.com/nozzle/nzTour.git"
+    },
+    "author": "Tanner Linsley <tannerlinsley@gmail.com>",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/nozzle/nzTour/issues"
+    },
+    "homepage": "https://github.com/nozzle/nzTour",
+    "dependencies": {
+        "gulp": "^3.8.11",
+        "gulp-ng-annotate": "^0.5.2",
+        "gulp-rename": "^1.2.0",
+        "gulp-stylus": "^2.0.1",
+        "gulp-uglifyjs": "^0.6.0",
+        "nib": "^1.1.0"
+    }
 }
