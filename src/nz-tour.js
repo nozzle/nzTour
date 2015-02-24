@@ -13,10 +13,10 @@
                     visible: true,
                     clickThrough: false,
                     clickExit: false,
+                    scrollThrough: true,
                     color: 'rgba(0,0,0,.7)'
                 },
                 dark: false,
-                container: 'body',
                 scrollBox: 'body',
                 previousText: 'Previous',
                 nextText: 'Next',
@@ -24,7 +24,7 @@
                 animationDuration: 400,
             },
             current: false,
-            container: false,
+            body: angular.element('body'),
             box: false,
 
             // Methods
@@ -36,7 +36,7 @@
             gotoStep: gotoStep,
 
             //Utils
-            debounce: debounce
+            throttle: throttle
         });
 
         window.nzTour = service;
@@ -75,7 +75,7 @@
             return;
         }
 
-        function next(skipAfter) {
+        function next() {
             if (!service.current) {
                 service.current.reject();
             }
@@ -87,13 +87,15 @@
         }
 
         function previous() {
-            var d = $q.defer();
-            if (service.current.step > 0) {
-                service.current.step--;
-                return doStep();
-            }
-            d.reject();
-            return d.promise;
+            return doAfter()
+                .then(function() {
+                    if (service.current.step > 0) {
+                        service.current.step--;
+                        return true;
+                    }
+                    return $q.reject();
+                })
+                .then(doStep);
         }
 
         function gotoStep(i) {
@@ -136,7 +138,7 @@
 
             if (state) {
                 service.box = angular.element($compile('<nz-tour class="hidden"></nz-tour>')(service));
-                angular.element(tour.config.container).append(service.box);
+                angular.element(service.body).append(service.box);
                 $timeout(function() {
                     service.box.removeClass('hidden');
                 }, 10);
@@ -224,19 +226,16 @@
 
         }
 
-        function debounce(func, wait, immediate) {
-            var timeout;
+        function throttle(callback, limit) {
+            var wait = false;
             return function() {
-                var context = this,
-                    args = arguments;
-                var later = function() {
-                    timeout = null;
-                    if (!immediate) func.apply(context, args);
-                };
-                var callNow = immediate && !timeout;
-                $timeout.cancel(timeout);
-                timeout = $timeout(later, wait);
-                if (callNow) func.apply(context, args);
+                if (!wait) {
+                    callback.call();
+                    wait = true;
+                    $timeout(function() {
+                        wait = false;
+                    }, limit);
+                }
             };
         }
     });
@@ -270,7 +269,7 @@
 
                 // $scope is the actual nzTour service :)
 
-                var container = angular.element($scope.current.tour.config.container),
+                var w = angular.element(window),
                     scrollBox = angular.element($scope.current.tour.config.scrollBox),
                     masks = {
                         all: el.find('.nzTour-masks'),
@@ -285,13 +284,18 @@
                     step = el.find('#nzTour-step'),
                     close = el.find('#nzTour-close'),
                     content = el.find('#nzTour-content'),
+                    innerContent = el.find('#nzTour-inner-content'),
                     actions = el.find('#nzTour-actions'),
                     previous = el.find('#nzTour-previous'),
                     next = el.find('#nzTour-next'),
+                    seeking = false,
                     scrolling = false,
                     margin = 15,
                     vMargin = margin + 'px 0',
                     hMargin = '0 ' + margin + 'px';
+
+                // Turn on Transitions
+                toggleTransitions(true);
 
                 // Mask Events?
                 masks.all.css('pointer-events', $scope.current.tour.config.mask.clickThrough ? 'none' : 'all');
@@ -302,22 +306,33 @@
                     margin = 7;
                 }
 
-                wrap.add(box).add(tip).css('transition', 'all ' + $scope.current.tour.config.animationDuration + 'ms ease');
+                // Mask Background Color
                 masks.top.add(masks.right).add(masks.bottom).add(masks.left).css({
-                    'transition': 'all ' + $scope.current.tour.config.animationDuration + 'ms ease',
                     'background-color': $scope.current.tour.config.mask.color
                 });
 
+                // Mask Scrollthrough disabled?
+                if ($scope.current.tour.config.mask.scrollThrough === false) {
+                    masks.all.bind('DOMMouseScroll mousewheel', stopMaskScroll);
+                }
+
+                // Step Update Listener
                 $scope.$on('step', updateStep);
 
-                // Scroll and Resize Tracking
-                var onWindowScrollDebounced = $scope.debounce(onWindowScroll, 100);
+                // Thottle for 60fps
+                var onWindowScrollDebounced = $scope.throttle(onWindowScroll, 14);
+                // Bindings
+                angular.element($window).bind('resize DOMMouseScroll mousewheel', onWindowScrollDebounced);
+                content.bind('DOMMouseScroll mousewheel', onBoxScroll);
+                // Event Cleanup
                 $scope.$on('remove', function() {
-                    angular.element($window).off('resize', onWindowScrollDebounced);
-                    scrollBox.off('scroll', onWindowScrollDebounced);
+                    angular.element($window).unbind('resize DOMMouseScroll mousewheel', onWindowScrollDebounced);
+                    content.unbind('DOMMouseScroll mousewheel', onBoxScroll);
+
+                    if ($scope.current.tour.config.mask.scrollThrough === false) {
+                        masks.all.unbind('DOMMouseScroll mousewheel', stopMaskScroll);
+                    }
                 });
-                angular.element($window).on('resize', onWindowScrollDebounced);
-                scrollBox.on('scroll', onWindowScrollDebounced);
 
                 $scope.tryStop = function() {
                     if ($scope.current.tour.config.mask.clickExit) {
@@ -329,27 +344,69 @@
 
 
 
+                function stopMaskScroll(e) {
+                    e.stopPropagation(e);
+                    e.preventDefault(e);
+                    e.returnValue = false;
+                    return false;
+                }
 
-
-
-
-                function onWindowScroll() {
-                    if (scrolling) {
-                        return;
-                    }
-                    if ($scope.view) {
-                        updateStep(null, $scope.view.step);
+                function toggleTransitions(state) {
+                    var group = wrap.add(box).add(tip).add(masks.top).add(masks.right).add(masks.bottom).add(masks.left);
+                    if (state) {
+                        group.css('transition', 'all ' + $scope.current.tour.config.animationDuration + 'ms ease');
+                    } else {
+                        group.css('transition', 'none');
                     }
                 }
 
-                function updateStep(e, step) {
-                    $scope.view = {
-                        step: step,
-                        length: $scope.current.tour.steps.length,
-                        content: $scope.current.tour.steps[step].content,
-                        previousText: $scope.current.tour.config.previousText,
-                        nextText: step == $scope.current.tour.steps.length - 1 ? $scope.current.tour.config.finishText : $scope.current.tour.config.nextText
-                    };
+                function onWindowScroll() {
+                    if (seeking) {
+                        return;
+                    }
+                    if ($scope.view) {
+                        updateStep(null, $scope.view.step, true);
+                    }
+                }
+
+                function onBoxScroll(e) {
+                    var delta = (e.type == 'DOMMouseScroll' ?
+                        e.originalEvent.detail * -40 :
+                        e.originalEvent.wheelDelta);
+                    var up = delta > 0;
+                    var scrollTop = content.scrollTop();
+
+
+                    if (up && !scrollTop) {
+                        return prevent(e);
+                    }
+                    if (!up && (innerContent.height() - content.height() == scrollTop)) {
+                        return prevent(e);
+                    }
+
+                    function prevent(e) {
+                        e.stopPropagation(e);
+                        e.preventDefault(e);
+                        e.returnValue = false;
+                        return false;
+                    }
+                }
+
+                function updateStep(e, step, resize) {
+                    if (!resize) {
+                        $scope.view = {
+                            step: step,
+                            length: $scope.current.tour.steps.length,
+                            previousText: $scope.current.tour.config.previousText,
+                            nextText: step == $scope.current.tour.steps.length - 1 ? $scope.current.tour.config.finishText : $scope.current.tour.config.nextText
+                        };
+                        //Don't mess around with angular sanitize.  Keep it simple.
+                        content.html($scope.current.tour.steps[step].content);
+                        // Scroll Back to the top
+                        content.scrollTop(0);
+                    } else {
+                        toggleTransitions(false);
+                    }
                     return findTarget($scope.current.tour.steps[step].target)
                         .then(scrollToTarget)
                         .then(moveToTarget);
@@ -374,6 +431,13 @@
                         return d.promise;
                     }
 
+                    var viewHeight = w.height() - scrollBox.offset().top;
+                    var boxScrollTop = scrollBox.scrollTop();
+                    var boxScrollBottom = boxScrollTop + viewHeight;
+                    var elTop = element.offset().top;
+                    var elHeight = element.outerHeight();
+                    var elBottom = elTop + elHeight;
+
                     if (isVisible(element)) {
                         d.resolve(element);
                     } else {
@@ -383,35 +447,55 @@
                     d.resolve(element);
                     return d.promise;
 
-                    function isVisible(el) {
+                    function isVisible() {
 
-                        var boxHeight = scrollBox.height();
-
-                        var viewTop = scrollBox.scrollTop();
-                        var viewBottom = viewTop + boxHeight;
-
-                        var elTop = el.offset().top - scrollBox.offset().top + viewTop;
-                        var elBottom = elTop + el.height();
+                        console.log(boxScrollTop, elTop, elBottom, boxScrollBottom);
 
                         // Is element to large to fit?
-                        if (el.height() > boxHeight) {
+                        if (element.outerHeight() > viewHeight) {
+                            // Are we above the element?
+                            if (elTop > boxScrollTop + viewHeight) {
+                                return false;
+                            }
+                            // Are we too far down?
+                            if (boxScrollTop > elBottom) {
+                                return false;
+                            }
                             // Is any part visible?
-                            return ((elBottom >= viewBottom) || (elTop <= viewTop));
+                            return elBottom >= boxScrollBottom ||
+                                elTop <= boxScrollTop;
                         }
 
-                        return ((elBottom <= viewBottom) && (elTop >= viewTop));
+                        return elBottom <= boxScrollBottom &&
+                            elTop >= boxScrollTop;
                     }
 
-                    function doScroll(element) {
+                    function doScroll() {
                         var d = $q.defer();
 
-                        scrolling = true;
+                        seeking = true;
+                        var scroll;
+
+                        // Is Element to Large to fit?
+                        if (elHeight > viewHeight) {
+                            // Are we above the element?
+                            if (elTop > boxScrollTop + viewHeight) {
+                                scroll = elTop - viewHeight / 2;
+                            }
+                            // Are we below the element?
+                            if (boxScrollTop > elBottom) {
+                                scroll = elTop + elHeight - viewHeight / 2;
+                            }
+                        } else {
+                            scroll = elTop - margin;
+                        }
 
                         angular.element(scrollBox).animate({
-                            scrollTop: element.offset().top - scrollBox.offset().top + scrollBox.scrollTop() - margin
+                            scrollTop: scroll
                         }, $scope.current.tour.config.animationDuration, function() {
                             d.resolve(element);
-                            scrolling = false;
+                            seeking = false;
+                            toggleTransitions(true);
                         });
 
                         return d.promise;
@@ -419,6 +503,7 @@
                 }
 
                 function moveToTarget(element) {
+                    toggleTransitions(true);
                     var d = $q.defer();
 
                     if (!element) {
@@ -440,24 +525,23 @@
                 }
 
                 function getDimensions(target) {
-                    var parentElement = angular.element($scope.current.tour.config.container);
                     var child = {
-                        pos: target.offset(),
+                        top: target.offset().top - scrollBox.scrollTop() + scrollBox.offset().top,
+                        left: target.offset().left - scrollBox.scrollLeft() + scrollBox.offset().left,
                         width: target.outerWidth(),
                         height: target.outerHeight(),
                     };
                     var parent = {
-                        pos: parentElement.offset(),
-                        width: parentElement.width(),
-                        height: parentElement.height(),
+                        width: w.width(),
+                        height: w.height() - scrollBox.offset().top,
                     };
                     return {
                         width: child.width,
                         height: child.height,
-                        top: child.pos.top - parent.pos.top,
-                        left: child.pos.left - parent.pos.left,
-                        bottom: parent.height - child.pos.top - child.height,
-                        right: parent.width - child.pos.left - child.width,
+                        top: child.top,
+                        left: child.left,
+                        bottom: parent.height - child.top - child.height,
+                        right: parent.width - child.left - child.width,
                     };
                 }
 

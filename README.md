@@ -58,9 +58,9 @@ var tour = {
             visible: true, // Shows the element mask
             clickThrough: false, // Allows the user to interact with elements beneath the mask
             clickExit: false, // Exit the tour when the user clicks on the mask
+            scrollThrough: true // Allows the user to scroll the scrollbox or window through the mask
             color: 'rgba(0,0,0,.7)' // The mask color
         },
-        container: 'body', // The container to mask
         scrollBox: 'body', // The container to scroll when searching for elements
         previousText: 'Previous',
         nextText: 'Next',
