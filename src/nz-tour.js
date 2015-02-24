@@ -250,7 +250,7 @@
                 '        <div id="nzTour-length">{{view.length}}</div>',
                 '        <div id="nzTour-close" ng-click="stop()">&#10005</div>',
                 '        <div id="nzTour-content">',
-                '           <div id="nzTour-inner-content">{{view.content}}</div>',
+                '           <div id="nzTour-inner-content"></div>',
                 '        </div>',
                 '        <div id="nzTour-actions">',
                 '            <button id="nzTour-previous" ng-show="view.step > 0" ng-click="previous()" class="ng-hide">{{view.previousText}}</button>',
@@ -292,7 +292,8 @@
                     scrolling = false,
                     margin = 15,
                     vMargin = margin + 'px 0',
-                    hMargin = '0 ' + margin + 'px';
+                    hMargin = '0 ' + margin + 'px',
+                    scrollDimensions = {};
 
                 // Turn on Transitions
                 toggleTransitions(true);
@@ -313,7 +314,7 @@
 
                 // Mask Scrollthrough disabled?
                 if ($scope.current.tour.config.mask.scrollThrough === false) {
-                    masks.all.bind('DOMMouseScroll mousewheel scroll', stopMaskScroll);
+                    masks.all.on('DOMMouseScroll mousewheel scroll', stopMaskScroll);
                 }
 
                 // Step Update Listener
@@ -322,15 +323,15 @@
                 // Thottle for 60fps
                 var onWindowScrollDebounced = $scope.throttle(onWindowScroll, 14);
                 // Bindings
-                w.bind('resize DOMMouseScroll mousewheel scroll', onWindowScrollDebounced);
-                content.bind('DOMMouseScroll mousewheel scroll', onBoxScroll);
+                w.on('resize DOMMouseScroll mousewheel scroll', onWindowScrollDebounced);
+                content.on('DOMMouseScroll mousewheel scroll', onBoxScroll);
                 // Event Cleanup
                 $scope.$on('remove', function() {
-                    w.unbind('resize DOMMouseScroll mousewheel scroll', onWindowScrollDebounced);
-                    content.unbind('DOMMouseScroll mousewheel scroll', onBoxScroll);
+                    w.off('resize DOMMouseScroll mousewheel scroll', onWindowScrollDebounced);
+                    content.off('DOMMouseScroll mousewheel scroll', onBoxScroll);
 
                     if ($scope.current.tour.config.mask.scrollThrough === false) {
-                        masks.all.unbind('DOMMouseScroll mousewheel scroll', stopMaskScroll);
+                        masks.all.off('DOMMouseScroll mousewheel scroll', stopMaskScroll);
                     }
                 });
 
@@ -401,7 +402,7 @@
                             nextText: step == $scope.current.tour.steps.length - 1 ? $scope.current.tour.config.finishText : $scope.current.tour.config.nextText
                         };
                         //Don't mess around with angular sanitize.  Keep it simple.
-                        content.html($scope.current.tour.steps[step].content);
+                        innerContent.html($scope.current.tour.steps[step].content);
                         // Scroll Back to the top
                         content.scrollTop(0);
                     } else {
@@ -431,12 +432,12 @@
                         return d.promise;
                     }
 
-                    var viewHeight = w.height() - scrollBox.offset().top;
-                    var boxScrollTop = scrollBox.scrollTop();
-                    var boxScrollBottom = boxScrollTop + viewHeight;
-                    var elTop = element.offset().top;
-                    var elHeight = element.outerHeight();
-                    var elBottom = elTop + elHeight;
+                    var viewHeight = scrollDimensions.viewHeight = w.height() - scrollBox.offset().top;
+                    var boxScrollTop = scrollDimensions.boxScrollTop = scrollBox.scrollTop();
+                    var boxScrollBottom = scrollDimensions.boxScrollBottom = boxScrollTop + viewHeight;
+                    var elTop = scrollDimensions.elTop = element.offset().top;
+                    var elHeight = scrollDimensions.elHeight = element.outerHeight();
+                    var elBottom = scrollDimensions.elBottom = elTop + elHeight;
 
                     if (isVisible(element)) {
                         d.resolve(element);
@@ -572,6 +573,12 @@
 
                     // Can Right?
                     if (dimensions.right > 250) {
+
+                        // Is Element to Large to fit?
+                        if (elHeight > viewHeight) {
+                            placeHorizontally('right', 'center', true);
+                        }
+
                         // Can Center?
                         if (dimensions.height > 135) {
                             placeHorizontally('right', 'center');
@@ -587,6 +594,10 @@
                     }
                     // Can Left?
                     if (dimensions.left > 250) {
+                        // Is Element to Large to fit?
+                        if (elHeight > viewHeight) {
+                            placeHorizontally('left', 'center', true);
+                        }
                         // can Center?
                         if (dimensions.height > 135) {
                             placeHorizontally('left', 'center');
@@ -662,7 +673,7 @@
 
                     }
 
-                    function placeHorizontally(h, v) {
+                    function placeHorizontally(h, v, fixed) {
 
                         var top;
                         var left;
@@ -680,7 +691,10 @@
                             translateX = '-100%';
                         }
 
-                        if (v == 'top') {
+                        if (fixed) {
+                            top = scrollDimensions.viewHeight / 2;
+                            translateY = '-50%';
+                        } else if (v == 'top') {
                             top = dimensions.top;
                             translateY = '0';
                         } else if (v == 'center') {

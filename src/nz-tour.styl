@@ -5,7 +5,7 @@ support-for-ie = false
 $buttonColor = #868686
 $successColor = #60bd68
 $dangerColor = #ec1d18
-$stepColor = rgba(0,0,0,0.7);
+$stepColor = rgba(0,0,0,0.7)
 $lengthColor = #CCC
 $darkColor = rgba(0,0,0,0.8)
 
@@ -30,7 +30,7 @@ nz-tour
         z-index: 999999999999
     #nzTour-box
         width: 250px
-        min-height: 80px
+        min-height: 69px
         max-height: 120px
         padding: .5em
         background: #fff
@@ -39,15 +39,17 @@ nz-tour
         transition:all .3s ease
         transform: scale(1)
         &.dark-box
-            background: $darkColor;
-            color:white;
+            background: $darkColor
+            color:white
             #nzTour-close
-                background:rgba(255, 255, 255, 0.2);
+                background: rgba(255, 255, 255, 0.81)
+                color: black
                 &:hover
                     background:lighten($dangerColor, 10%)
+                    color:white
             #nzTour-step
                 background:white
-                color:$darkColor;
+                color:$darkColor
             #nzTour-length
                 background: rgba(255,255,255,.2)
                 color: #BABABA
@@ -56,17 +58,17 @@ nz-tour
                     left: 5px
                 &.center
                     left: 50%
-                    transform:translate(-50%,0);
+                    transform:translate(-50%,0)
                 &.right
-                    right: 5px;
+                    right: 5px
                 &.side
                     &.center
                         top:50%
-                        transform:translate(0,-50%);
+                        transform:translate(0,-50%)
                     &.top
                         top: 5px
                     &.bottom
-                        bottom: 5px;
+                        bottom: 5px
                 &.top
                     top: -5px
                     border-left: 5px solid transparent
@@ -99,17 +101,17 @@ nz-tour
             left: 5px
         &.center
             left: 50%
-            transform:translate(-50%,0);
+            transform:translate(-50%,0)
         &.right
-            right: 5px;
+            right: 5px
         &.side
             &.center
                 top:50%
-                transform:translate(0,-50%);
+                transform:translate(0,-50%)
             &.top
                 top: 5px
             &.bottom
-                bottom: 5px;
+                bottom: 5px
         &.top
             top: -5px
             border-left: 5px solid transparent
@@ -133,33 +135,32 @@ nz-tour
                 border-left: 5px solid white
     #nzTour-close
         position: absolute
-        top: 2px
-        right: 2px
-        width: 12px
-        height: 12px
-        background: rgba(0,0,0,.3)
-        border-radius: 100%;
+        top: -7px
+        right: -7px
+        width: 14px
+        height: 14px
+        background: rgba(0, 0, 0, 0.8)
+        border-radius: 100%
         font-size: 8px
         color: #fff
         cursor: pointer
         transition: all .2s ease
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        display: flex
+        align-items: center
+        justify-content: center
         &:hover
             background:$dangerColor
     #nzTour-content
         width: 100%
         height: 100%
-        max-height: 104px;
+        max-height: 104px
         overflow-x: hidden
         overflow-y: scroll
         position:relative
-        border-bottom: solid 32px transparent;
-        box-shadow: inset 0 -20px 20px -20px rgba(0,0,0,0.2);
-        padding: 0 0 0 4px;
-        border-right: solid 8px transparent;
-        font-size:14px;
+        border-bottom: solid 32px transparent
+        box-shadow: inset 0 -20px 20px -20px rgba(0,0,0,0.2)
+        padding: 0 4px
+        font-size:14px
     #nzTour-step, #nzTour-length
         width: 24px
         height: 24px
@@ -169,9 +170,9 @@ nz-tour
         font-size: 12px
         font-weight: bold
         border-radius: 50px
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        display: flex
+        align-items: center
+        justify-content: center
     #nzTour-step
         background: $stepColor
         left: 0.7em
