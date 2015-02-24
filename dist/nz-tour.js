@@ -322,11 +322,11 @@
                 // Thottle for 60fps
                 var onWindowScrollDebounced = $scope.throttle(onWindowScroll, 14);
                 // Bindings
-                angular.element($window).bind('resize DOMMouseScroll mousewheel scroll', onWindowScrollDebounced);
+                w.bind('resize DOMMouseScroll mousewheel scroll', onWindowScrollDebounced);
                 content.bind('DOMMouseScroll mousewheel scroll', onBoxScroll);
                 // Event Cleanup
                 $scope.$on('remove', function() {
-                    angular.element($window).unbind('resize DOMMouseScroll mousewheel scroll', onWindowScrollDebounced);
+                    w.unbind('resize DOMMouseScroll mousewheel scroll', onWindowScrollDebounced);
                     content.unbind('DOMMouseScroll mousewheel scroll', onBoxScroll);
 
                     if ($scope.current.tour.config.mask.scrollThrough === false) {

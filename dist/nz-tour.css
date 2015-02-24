@@ -193,7 +193,8 @@ nz-tour #nzTour-content {
   border-bottom: solid 32px transparent;
   -webkit-box-shadow: inset 0 -20px 20px -20px rgba(0,0,0,0.2);
   box-shadow: inset 0 -20px 20px -20px rgba(0,0,0,0.2);
-  padding: 0 8px 0 4px;
+  padding: 0 0 0 4px;
+  border-right: solid 8px transparent;
   font-size: 14px;
 }
 nz-tour #nzTour-step,
