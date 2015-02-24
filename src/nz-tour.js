@@ -313,7 +313,7 @@
 
                 // Mask Scrollthrough disabled?
                 if ($scope.current.tour.config.mask.scrollThrough === false) {
-                    masks.all.bind('DOMMouseScroll mousewheel', stopMaskScroll);
+                    masks.all.bind('DOMMouseScroll mousewheel scroll', stopMaskScroll);
                 }
 
                 // Step Update Listener
@@ -322,15 +322,15 @@
                 // Thottle for 60fps
                 var onWindowScrollDebounced = $scope.throttle(onWindowScroll, 14);
                 // Bindings
-                angular.element($window).bind('resize DOMMouseScroll mousewheel', onWindowScrollDebounced);
-                content.bind('DOMMouseScroll mousewheel', onBoxScroll);
+                angular.element($window).bind('resize DOMMouseScroll mousewheel scroll', onWindowScrollDebounced);
+                content.bind('DOMMouseScroll mousewheel scroll', onBoxScroll);
                 // Event Cleanup
                 $scope.$on('remove', function() {
-                    angular.element($window).unbind('resize DOMMouseScroll mousewheel', onWindowScrollDebounced);
-                    content.unbind('DOMMouseScroll mousewheel', onBoxScroll);
+                    angular.element($window).unbind('resize DOMMouseScroll mousewheel scroll', onWindowScrollDebounced);
+                    content.unbind('DOMMouseScroll mousewheel scroll', onBoxScroll);
 
                     if ($scope.current.tour.config.mask.scrollThrough === false) {
-                        masks.all.unbind('DOMMouseScroll mousewheel', stopMaskScroll);
+                        masks.all.unbind('DOMMouseScroll mousewheel scroll', stopMaskScroll);
                     }
                 });
 
