@@ -17,7 +17,7 @@
                     color: 'rgba(0,0,0,.7)'
                 },
                 dark: false,
-                scrollBox: 'body',
+                scrollBox: navigator.userAgent.indexOf('AppleWebKit') != -1 ? "body" : "html",
                 previousText: 'Previous',
                 nextText: 'Next',
                 finishText: 'Finish',
@@ -65,7 +65,11 @@
         }
 
         function stop() {
-            return toggleElements(false)
+            return doAfter()
+                .then(function() {
+                    return false;
+                })
+                .then(toggleElements)
                 .then(abort);
         }
 
@@ -318,7 +322,7 @@
 
                 // Mask Scrollthrough disabled?
                 if ($scope.current.tour.config.mask.scrollThrough === false) {
-                    masks.all.on('DOMMouseScroll mousewheel scroll', stopMaskScroll);
+                    window.addWheelListener(masks[0], stopMaskScroll);
                 }
 
                 // Step Update Listener
@@ -327,17 +331,18 @@
                 // Thottle for 60fps
                 var onWindowScrollDebounced = $scope.throttle(onWindowScroll, 16.666);
                 // Bindings
-                w.on('resize DOMMouseScroll mousewheel scroll', onWindowScrollDebounced);
-                w.on('keydown', keyDown);
-                content.on('DOMMouseScroll mousewheel scroll', onBoxScroll);
+                w.bind('resize', onWindowScrollDebounced);
+                w.bind('keydown', keyDown);
+                window.addWheelListener(window, onWindowScrollDebounced);
+                window.addWheelListener(content[0], onBoxScroll);
                 // Event Cleanup
                 $scope.$on('remove', function() {
-                    w.off('resize DOMMouseScroll mousewheel scroll', onWindowScrollDebounced);
-                    w.off('keydown', keyDown);
-                    content.off('DOMMouseScroll mousewheel scroll', onBoxScroll);
+                    w.unbind('resize DOMMouseScroll mousewheel scroll', onWindowScrollDebounced);
+                    w.unbind('keydown', keyDown);
+                    window.removeWheelListener(content[0], onBoxScroll);
 
                     if ($scope.current.tour.config.mask.scrollThrough === false) {
-                        masks.all.off('DOMMouseScroll mousewheel scroll', stopMaskScroll);
+                        window.removeWheelListener(masks[0], stopMaskScroll);
                     }
                 });
 
@@ -374,7 +379,6 @@
                 }
 
                 function toggleMaskTransitions(state) {
-                    console.log(state);
                     var group = masks.top.add(masks.right).add(masks.bottom).add(masks.left);
                     if (state) {
                         group.css('transition', 'all ' + $scope.current.tour.config.animationDuration + 'ms ease');
@@ -406,7 +410,7 @@
                 }
 
                 function onBoxScroll(e) {
-                    var delta = (e.type == 'DOMMouseScroll' ?
+                    var delta = (e.type == 'DOMMouseScroll' || e.type == 'MozMousePixelScroll' ?
                         e.originalEvent.detail * -40 :
                         e.originalEvent.wheelDelta);
                     var up = delta > 0;
@@ -565,8 +569,6 @@
                         }
 
                         seeking = true;
-
-                        console.log(scrolling);
 
                         scrollBox.animate({
                                 scrollTop: scroll
@@ -955,6 +957,71 @@
         });
         return dst;
     };
+
+    if (window.addWheelListener) {
+        return;
+    }
+
+    var prefix = "",
+        _addEventListener, onwheel, support;
+
+    // detect event model
+    if (window.addEventListener) {
+        _addEventListener = "addEventListener";
+    } else {
+        _addEventListener = "attachEvent";
+        prefix = "on";
+    }
+
+    // detect available wheel event
+    support = "onwheel" in document.createElement("div") ? "wheel" : // Modern browsers support "wheel"
+        document.onmousewheel !== undefined ? "mousewheel" : // Webkit and IE support at least "mousewheel"
+        "DOMMouseScroll"; // let's assume that remaining browsers are older Firefox
+
+    window.addWheelListener = function(elem, callback, useCapture) {
+        _addWheelListener(elem, support, callback, useCapture);
+
+        // handle MozMousePixelScroll in older Firefox
+        if (support == "DOMMouseScroll") {
+            _addWheelListener(elem, "MozMousePixelScroll", callback, useCapture);
+        }
+    };
+
+    function _addWheelListener(elem, eventName, callback, useCapture) {
+        elem[_addEventListener](prefix + eventName, support == "wheel" ? callback : function(originalEvent) {
+            !originalEvent && (originalEvent = window.event);
+
+            // create a normalized event object
+            var event = {
+                // keep a ref to the original event object
+                originalEvent: originalEvent,
+                target: originalEvent.target || originalEvent.srcElement,
+                type: "wheel",
+                deltaMode: originalEvent.type == "MozMousePixelScroll" ? 0 : 1,
+                deltaX: 0,
+                deltaZ: 0,
+                preventDefault: function() {
+                    originalEvent.preventDefault ?
+                        originalEvent.preventDefault() :
+                        originalEvent.returnValue = false;
+                }
+            };
+
+            // calculate deltaY (and deltaX) according to the event
+            if (support == "mousewheel") {
+                event.deltaY = -1 / 40 * originalEvent.wheelDelta;
+                // Webkit also support wheelDeltaX
+                originalEvent.wheelDeltaX && (event.deltaX = -1 / 40 * originalEvent.wheelDeltaX);
+            } else {
+                event.deltaY = originalEvent.detail;
+            }
+
+            // it's time to fire the callback
+            return callback(event);
+
+        }, useCapture || false);
+    }
+
 
 })();
 
