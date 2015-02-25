@@ -331,13 +331,13 @@
                 // Thottle for 60fps
                 var onWindowScrollDebounced = $scope.throttle(onWindowScroll, 16.666);
                 // Bindings
-                w.bind('resize', onWindowScrollDebounced);
+                w.bind('resize scroll', onWindowScrollDebounced);
                 w.bind('keydown', keyDown);
                 window.addWheelListener(window, onWindowScrollDebounced);
                 window.addWheelListener(content[0], onBoxScroll);
                 // Event Cleanup
                 $scope.$on('remove', function() {
-                    w.unbind('resize DOMMouseScroll mousewheel scroll', onWindowScrollDebounced);
+                    w.unbind('resize scroll', onWindowScrollDebounced);
                     w.unbind('keydown', keyDown);
                     window.removeWheelListener(content[0], onBoxScroll);
 
@@ -410,9 +410,12 @@
                 }
 
                 function onBoxScroll(e) {
-                    var delta = (e.type == 'DOMMouseScroll' || e.type == 'MozMousePixelScroll' ?
-                        e.originalEvent.detail * -40 :
-                        e.originalEvent.wheelDelta);
+                    var delta;
+                    if (e.type == 'DOMMouseScroll') {
+                        delta = e.detail * -40;
+                    } else {
+                        delta = e.wheelDelta;
+                    }
                     var up = delta > 0;
                     var scrollTop = content.scrollTop();
 
@@ -553,11 +556,11 @@
                         if (state.indexOf('large') > -1) {
                             // Is the element below us?
                             if (state == 'large-below') {
-                                scroll = elTop - viewHeight / 2;
+                                scroll = elTop - viewHeight + maxHeight + margin;
                             }
                             // Is the element above us?
                             else if (state == 'large-above') {
-                                scroll = elTop + elHeight - viewHeight / 2;
+                                scroll = elTop + elHeight - maxHeight - margin;
                             }
                         } else {
                             // Is the element below us?
