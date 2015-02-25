@@ -22,6 +22,7 @@
                 nextText: 'Next',
                 finishText: 'Finish',
                 animationDuration: 400,
+                placementPriority: ['bottom', 'right', 'top', 'left']
             },
             current: false,
             body: angular.element('body'),
@@ -117,8 +118,6 @@
         function startTour(tour) {
 
             tour.config = angular.extendDeep({}, service.config, tour.config);
-
-            console.log(tour);
 
             service.current = {
                 tour: tour,
@@ -293,10 +292,15 @@
                     margin = 15,
                     vMargin = margin + 'px 0',
                     hMargin = '0 ' + margin + 'px',
-                    scrollDimensions = {};
+                    maxHeight = 120,
+                    maxWidth = 250,
+                    maskTransitions = true,
+                    scrollDimensions = {},
+                    currentElement = false;
 
                 // Turn on Transitions
-                toggleTransitions(true);
+                toggleMaskTransitions(true);
+                toggleBoxTransitions(true);
 
                 // Mask Events?
                 masks.all.css('pointer-events', $scope.current.tour.config.mask.clickThrough ? 'none' : 'all');
@@ -321,13 +325,15 @@
                 $scope.$on('step', updateStep);
 
                 // Thottle for 60fps
-                var onWindowScrollDebounced = $scope.throttle(onWindowScroll, 14);
+                var onWindowScrollDebounced = $scope.throttle(onWindowScroll, 16.666);
                 // Bindings
                 w.on('resize DOMMouseScroll mousewheel scroll', onWindowScrollDebounced);
+                w.on('keydown', keyDown);
                 content.on('DOMMouseScroll mousewheel scroll', onBoxScroll);
                 // Event Cleanup
                 $scope.$on('remove', function() {
                     w.off('resize DOMMouseScroll mousewheel scroll', onWindowScrollDebounced);
+                    w.off('keydown', keyDown);
                     content.off('DOMMouseScroll mousewheel scroll', onBoxScroll);
 
                     if ($scope.current.tour.config.mask.scrollThrough === false) {
@@ -344,6 +350,21 @@
 
 
 
+                // Event Functions
+
+                function keyDown(e) {
+                    switch (e.which) {
+                        case 37:
+                            $scope.previous();
+                            return;
+                        case 39:
+                            $scope.next();
+                            return;
+                        case 27:
+                            $scope.stop();
+                            return;
+                    }
+                }
 
                 function stopMaskScroll(e) {
                     e.stopPropagation(e);
@@ -352,12 +373,22 @@
                     return false;
                 }
 
-                function toggleTransitions(state) {
-                    var group = wrap.add(box).add(tip).add(masks.top).add(masks.right).add(masks.bottom).add(masks.left);
+                function toggleMaskTransitions(state) {
+                    console.log(state);
+                    var group = masks.top.add(masks.right).add(masks.bottom).add(masks.left);
                     if (state) {
                         group.css('transition', 'all ' + $scope.current.tour.config.animationDuration + 'ms ease');
                     } else {
-                        group.css('transition', 'none');
+                        group.css('transition', 'all 0');
+                    }
+                }
+
+                function toggleBoxTransitions(state) {
+                    var group = wrap.add(box).add(tip);
+                    if (state) {
+                        group.css('transition', 'all ' + $scope.current.tour.config.animationDuration + 'ms ease');
+                    } else {
+                        group.css('transition', 'all 0');
                     }
                 }
 
@@ -365,9 +396,13 @@
                     if (seeking) {
                         return;
                     }
-                    if ($scope.view) {
-                        updateStep(null, $scope.view.step, true);
+
+                    scrolling = true;
+
+                    if (maskTransitions) {
+                        toggleMaskTransitions(false);
                     }
+                    updateBox($scope.view.step);
                 }
 
                 function onBoxScroll(e) {
@@ -393,25 +428,45 @@
                     }
                 }
 
-                function updateStep(e, step, resize) {
-                    if (!resize) {
-                        $scope.view = {
-                            step: step,
-                            length: $scope.current.tour.steps.length,
-                            previousText: $scope.current.tour.config.previousText,
-                            nextText: step == $scope.current.tour.steps.length - 1 ? $scope.current.tour.config.finishText : $scope.current.tour.config.nextText
-                        };
-                        //Don't mess around with angular sanitize.  Keep it simple.
-                        innerContent.html($scope.current.tour.steps[step].content);
-                        // Scroll Back to the top
-                        content.scrollTop(0);
-                    } else {
-                        toggleTransitions(false);
-                    }
+                function updateStep(e, step) {
+
+                    currentElement = false;
+
+                    $scope.view = {
+                        step: step,
+                        length: $scope.current.tour.steps.length,
+                        previousText: $scope.current.tour.config.previousText,
+                        nextText: step == $scope.current.tour.steps.length - 1 ? $scope.current.tour.config.finishText : $scope.current.tour.config.nextText
+                    };
+                    //Don't mess around with angular sanitize.  Keep it simple.
+                    innerContent.html($scope.current.tour.steps[step].content);
+                    // Scroll Back to the top
+                    content.scrollTop(0);
+
+                    // Update Box with transitions
+                    toggleMaskTransitions(true);
+                    scrolling = seeking = false;
+                    return updateBox(step);
+                }
+
+                function updateBox(step) {
                     return findTarget($scope.current.tour.steps[step].target)
                         .then(scrollToTarget)
+                        .then(function(dimensions) {
+                            seeking = false;
+                            return dimensions;
+                        })
                         .then(moveToTarget);
                 }
+
+
+
+
+
+
+
+
+                // Internal Functions
 
                 function findTarget(selector) {
                     var d = $q.defer();
@@ -419,7 +474,12 @@
                     if (!target.length) {
                         d.resolve(false);
                     } else {
-                        d.resolve(angular.element(target[0]));
+                        if (currentElement) {
+                            d.resolve(currentElement);
+                        } else {
+                            currentElement = angular.element(target[0]);
+                            d.resolve(currentElement);
+                        }
                     }
                     return d.promise;
                 }
@@ -439,10 +499,12 @@
                     var elHeight = scrollDimensions.elHeight = element.outerHeight();
                     var elBottom = scrollDimensions.elBottom = elTop + elHeight;
 
-                    if (isVisible(element)) {
+                    var visibility = isVisible(element);
+
+                    if (visibility === true) {
                         d.resolve(element);
                     } else {
-                        return doScroll(element);
+                        return doScroll(visibility);
                     }
 
                     d.resolve(element);
@@ -450,61 +512,76 @@
 
                     function isVisible() {
 
-                        console.log(boxScrollTop, elTop, elBottom, boxScrollBottom);
-
                         // Is element to large to fit?
-                        if (element.outerHeight() > viewHeight) {
-                            // Are we above the element?
-                            if (elTop > boxScrollTop + viewHeight) {
-                                return false;
+                        if (element.outerHeight() > viewHeight - margin * 2) {
+                            // Is the element below us?
+                            if (elTop > boxScrollTop + viewHeight - maxHeight) {
+                                return 'large-below';
                             }
-                            // Are we too far down?
-                            if (boxScrollTop > elBottom) {
-                                return false;
+                            // Is the element above us?
+                            else if (boxScrollTop > elBottom - maxHeight) {
+                                return 'large-above';
                             }
                             // Is any part visible?
-                            return elBottom >= boxScrollBottom ||
-                                elTop <= boxScrollTop;
+                            if (elBottom > boxScrollBottom ||
+                                elTop < boxScrollTop) {
+                                return 'large-visible';
+                            }
                         }
 
-                        return elBottom <= boxScrollBottom &&
-                            elTop >= boxScrollTop;
+                        if (elTop - margin <= boxScrollTop) {
+                            return 'small-above';
+                        }
+
+                        if (elBottom + margin >= boxScrollTop + viewHeight) {
+                            return 'small-below';
+                        }
+
+                        return true;
                     }
 
-                    function doScroll() {
+                    function doScroll(state) {
                         var d = $q.defer();
 
-                        seeking = true;
                         var scroll;
 
                         // Is Element to Large to fit?
-                        if (elHeight > viewHeight) {
-                            // Are we above the element?
-                            if (elTop > boxScrollTop + viewHeight) {
+                        if (state.indexOf('large') > -1) {
+                            // Is the element below us?
+                            if (state == 'large-below') {
                                 scroll = elTop - viewHeight / 2;
                             }
-                            // Are we below the element?
-                            if (boxScrollTop > elBottom) {
+                            // Is the element above us?
+                            else if (state == 'large-above') {
                                 scroll = elTop + elHeight - viewHeight / 2;
                             }
                         } else {
-                            scroll = elTop - margin;
+                            // Is the element below us?
+                            if (state == 'small-below') {
+                                scroll = elTop - viewHeight + elHeight + margin;
+                            } else {
+                                scroll = elTop - margin;
+                            }
                         }
 
-                        angular.element(scrollBox).animate({
-                            scrollTop: scroll
-                        }, $scope.current.tour.config.animationDuration, function() {
-                            d.resolve(element);
-                            seeking = false;
-                            toggleTransitions(true);
-                        });
+                        seeking = true;
+
+                        console.log(scrolling);
+
+                        scrollBox.animate({
+                                scrollTop: scroll
+                            }, scrolling ? 0 : $scope.current.tour.config.animationDuration,
+                            function() {
+                                d.resolve(element);
+                                scrolling = false;
+                                toggleMaskTransitions(true);
+                            });
 
                         return d.promise;
                     }
                 }
 
                 function moveToTarget(element) {
-                    toggleTransitions(true);
                     var d = $q.defer();
 
                     if (!element) {
@@ -554,84 +631,143 @@
                         return;
                     }
 
-                    // Can Below?
-                    if (dimensions.bottom > 135) {
-                        // Can Centered?
-                        if (dimensions.width > 250) {
-                            placeVertically('bottom', 'center');
-                            return;
+                    var placementOptions = {
+                        bottom: bottom,
+                        right: right,
+                        left: left,
+                        top: top
+                    };
+
+                    var hasValidPriorities = true;
+                    angular.forEach($scope.current.tour.config.placementPriority, function(priority) {
+                        if (!placementOptions[priority]) {
+                            hasValidPriorities = false;
                         }
-                        // Can on the left?
-                        if (dimensions.right + dimensions.width > 250) {
-                            placeVertically('bottom', 'left');
-                            return;
+                    });
+
+                    var done = false;
+
+                    angular.forEach(hasValidPriorities ? $scope.current.tour.config.placementPriority : $scope.config.placementPriority, function(priority) {
+                        if (!done && placementOptions[priority]()) {
+                            done = true;
                         }
-                        // Right, I guess...
-                        placeVertically('bottom', 'right');
+                    });
+
+                    if (!done) {
+                        placeInside('bottom', 'center');
                         return;
                     }
 
-                    // Can Right?
-                    if (dimensions.right > 250) {
 
-                        // Is Element to Large to fit?
-                        if (elHeight > viewHeight) {
-                            placeHorizontally('right', 'center', true);
-                        }
+                    // Placement Priorities
 
-                        // Can Center?
-                        if (dimensions.height > 135) {
-                            placeHorizontally('right', 'center');
-                            return;
+                    function bottom() {
+                        // Can Below?
+                        if (dimensions.bottom > maxHeight) {
+                            // Can Centered?
+                            if (dimensions.width > maxWidth) {
+                                placeVertically('bottom', 'center');
+                                return true;
+                            }
+                            // Can on the left?
+                            if (dimensions.right + dimensions.width > maxWidth) {
+                                placeVertically('bottom', 'left');
+                                return true;
+                            }
+                            // Right, I guess...
+                            placeVertically('bottom', 'right');
+                            return true;
                         }
-                        // can Top?
-                        if (dimensions.bottom + dimensions.height > 135) {
-                            placeHorizontally('right', 'top');
-                            return;
-                        }
-                        placeHorizontally('right', 'bottom');
-                        return;
-                    }
-                    // Can Left?
-                    if (dimensions.left > 250) {
-                        // Is Element to Large to fit?
-                        if (elHeight > viewHeight) {
-                            placeHorizontally('left', 'center', true);
-                        }
-                        // can Center?
-                        if (dimensions.height > 135) {
-                            placeHorizontally('left', 'center');
-                            return;
-                        }
-                        // can Top?
-                        if (dimensions.bottom + dimensions.height > 135) {
-                            placeHorizontally('left', 'top');
-                            return;
-                        }
-                        placeHorizontally('left', 'bottom');
-                        return;
+                        return false;
                     }
 
-                    // Can Above?
-                    if (dimensions.top > 135) {
-                        // Can Centered?
-                        if (dimensions.width > 250) {
-                            placeVertically('top', 'center');
-                            return;
+                    function right() {
+                        // Can Right?
+                        if (dimensions.right > maxWidth) {
+
+                            // Is Element to Large to fit?
+                            if (dimensions.height > scrollDimensions.viewHeight) {
+
+                                if (dimensions.top > scrollDimensions.viewHeight / 2) {
+                                    placeHorizontally('right', 'top');
+                                    return true;
+                                }
+
+                                if (dimensions.bottom > scrollDimensions.viewHeight / 2) {
+                                    placeHorizontally('right', 'bottom');
+                                    return true;
+                                }
+
+                                placeHorizontally('right', 'center', true);
+                                return true;
+                            }
+
+                            // Can Center?
+                            if (dimensions.height > maxHeight) {
+                                placeHorizontally('right', 'center');
+                                return true;
+                            }
+                            // can Top?
+                            if (dimensions.bottom + dimensions.height > maxHeight) {
+                                placeHorizontally('right', 'top');
+                                return true;
+                            }
+                            placeHorizontally('right', 'bottom');
+                            return true;
                         }
-                        // Can on the left?
-                        if (dimensions.right + dimensions.width > 250) {
-                            placeVertically('top', 'left');
-                            return;
-                        }
-                        // Right, I guess...
-                        placeVertically('top', 'right');
-                        return;
+                        return false;
                     }
 
-                    placeInside('bottom', 'center');
-                    return;
+                    function left() {
+                        // Can Left?
+                        if (dimensions.left > maxWidth) {
+                            // Is Element to Large to fit?
+                            if (dimensions.height > scrollDimensions.viewHeight) {
+                                placeHorizontally('left', 'center', true);
+                                return true;
+                            }
+                            // can Center?
+                            if (dimensions.height > maxHeight) {
+                                placeHorizontally('left', 'center');
+                                return true;
+                            }
+                            // can Top?
+                            if (dimensions.bottom + dimensions.height > maxHeight) {
+                                placeHorizontally('left', 'top');
+                                return true;
+                            }
+                            placeHorizontally('left', 'bottom');
+                            return true;
+                        }
+                        return false;
+                    }
 
+                    function top() {
+                        // Can Above?
+                        if (dimensions.top > maxHeight) {
+                            // Can Centered?
+                            if (dimensions.width > maxWidth) {
+                                placeVertically('top', 'center');
+                                return true;
+                            }
+                            // Can on the left?
+                            if (dimensions.right + dimensions.width > maxWidth) {
+                                placeVertically('top', 'left');
+                                return true;
+                            }
+                            // Right, I guess...
+                            placeVertically('top', 'right');
+                            return true;
+                        }
+                        return false;
+                    }
+
+
+
+
+
+
+                    // Placement functions
 
                     function placeVertically(v, h) {
 
@@ -669,7 +805,7 @@
                             transform: 'translate(' + translateX + ',' + translateY + ')',
                         });
 
-                        tip.attr('class', tipY + ' ' + h);
+                        tip.attr('class', 'vertical ' + tipY + ' ' + h);
 
                     }
 
@@ -711,7 +847,7 @@
                             transform: 'translate(' + translateX + ',' + translateY + ')',
                         });
 
-                        tip.attr('class', 'side ' + tipX + ' ' + v);
+                        tip.attr('class', 'horizontal ' + tipX + ' ' + v);
 
                     }
 

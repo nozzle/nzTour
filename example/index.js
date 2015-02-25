@@ -4,6 +4,9 @@
     module.controller('mainController', function($scope, $q, nzTour) {
 
         var tour = window.tour = {
+            config: {
+                //dark: true,
+            },
             steps: [{
                 target: '#features',
                 content: "Let's take a look at some features!"

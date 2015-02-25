@@ -60,16 +60,12 @@ nz-tour #nzTour-box.dark-box #nzTour-tip.left {
 }
 nz-tour #nzTour-box.dark-box #nzTour-tip.center {
   left: 50%;
-  -webkit-transform: translate(-50%, 0);
-  transform: translate(-50%, 0);
 }
 nz-tour #nzTour-box.dark-box #nzTour-tip.right {
   right: 5px;
 }
 nz-tour #nzTour-box.dark-box #nzTour-tip.side.center {
   top: 50%;
-  -webkit-transform: translate(0, -50%);
-  transform: translate(0, -50%);
 }
 nz-tour #nzTour-box.dark-box #nzTour-tip.side.top {
   top: 5px;
@@ -110,48 +106,44 @@ nz-tour #nzTour-tip {
 nz-tour #nzTour-tip.hidden {
   opacity: 0;
 }
-nz-tour #nzTour-tip.left {
+nz-tour #nzTour-tip.vertical.left {
   left: 5px;
 }
-nz-tour #nzTour-tip.center {
+nz-tour #nzTour-tip.vertical.center {
   left: 50%;
-  -webkit-transform: translate(-50%, 0);
-  transform: translate(-50%, 0);
 }
-nz-tour #nzTour-tip.right {
+nz-tour #nzTour-tip.vertical.right {
   right: 5px;
 }
-nz-tour #nzTour-tip.side.center {
-  top: 50%;
-  -webkit-transform: translate(0, -50%);
-  transform: translate(0, -50%);
-}
-nz-tour #nzTour-tip.side.top {
-  top: 5px;
-}
-nz-tour #nzTour-tip.side.bottom {
-  bottom: 5px;
-}
-nz-tour #nzTour-tip.top {
+nz-tour #nzTour-tip.vertical.top {
   top: -5px;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
   border-bottom: 5px solid #fff;
 }
-nz-tour #nzTour-tip.bottom {
+nz-tour #nzTour-tip.vertical.bottom {
   bottom: -5px;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
   border-top: 5px solid #fff;
 }
-nz-tour #nzTour-tip.side.left {
-  left: -10px;
+nz-tour #nzTour-tip.horizontal.top {
+  top: 5px;
+}
+nz-tour #nzTour-tip.horizontal.center {
+  top: 50%;
+}
+nz-tour #nzTour-tip.horizontal.bottom {
+  bottom: 5px;
+}
+nz-tour #nzTour-tip.horizontal.left {
+  left: -5px;
   border-top: 5px solid transparent;
   border-bottom: 5px solid transparent;
   border-right: 5px solid #fff;
 }
-nz-tour #nzTour-tip.side.right {
-  right: -10px;
+nz-tour #nzTour-tip.horizontal.right {
+  right: -5px;
   border-top: 5px solid transparent;
   border-bottom: 5px solid transparent;
   border-left: 5px solid #fff;

@@ -58,13 +58,11 @@ nz-tour
                     left: 5px
                 &.center
                     left: 50%
-                    transform:translate(-50%,0)
                 &.right
                     right: 5px
                 &.side
                     &.center
                         top:50%
-                        transform:translate(0,-50%)
                     &.top
                         top: 5px
                     &.bottom
@@ -97,39 +95,37 @@ nz-tour
         height: 0
         &.hidden
             opacity:0
-        &.left
-            left: 5px
-        &.center
-            left: 50%
-            transform:translate(-50%,0)
-        &.right
-            right: 5px
-        &.side
+        &.vertical
+            &.left
+                left: 5px
             &.center
-                top:50%
-                transform:translate(0,-50%)
+                left: 50%
+            &.right
+                right: 5px
+            &.top
+                top: -5px
+                border-left: 5px solid transparent
+                border-right: 5px solid transparent
+                border-bottom: 5px solid white
+            &.bottom
+                bottom: -5px
+                border-left: 5px solid transparent
+                border-right: 5px solid transparent
+                border-top: 5px solid white
+        &.horizontal
             &.top
                 top: 5px
+            &.center
+                top:50%
             &.bottom
                 bottom: 5px
-        &.top
-            top: -5px
-            border-left: 5px solid transparent
-            border-right: 5px solid transparent
-            border-bottom: 5px solid white
-        &.bottom
-            bottom: -5px
-            border-left: 5px solid transparent
-            border-right: 5px solid transparent
-            border-top: 5px solid white
-        &.side
             &.left
-                left: -10px
+                left: -5px
                 border-top: 5px solid transparent
                 border-bottom: 5px solid transparent
                 border-right: 5px solid white
             &.right
-                right: -10px
+                right: -5px
                 border-top: 5px solid transparent
                 border-bottom: 5px solid transparent
                 border-left: 5px solid white
