@@ -88,7 +88,9 @@
 
             return doAfter()
                 .then(checkHasNext)
-                .then(queueNext)
+                .then(function() {
+                    service.current.step++;
+                })
                 .then(doStep);
         }
 
@@ -107,8 +109,11 @@
         function gotoStep(i) {
             var d = $q.defer();
             if (i > 0 && i <= service.current.tour.steps.length) {
-                service.current.step = i - 2;
-                return doStep(true);
+                return doAfter()
+                    .then(function() {
+                        service.current.step = i;
+                    })
+                    .then(doStep);
             }
             d.reject();
             return d.promise;
@@ -209,12 +214,7 @@
             return d.promise;
         }
 
-        function queueNext() {
-            var d = $q.defer();
-            service.current.step++;
-            d.resolve();
-            return d.promise;
-        }
+
 
         function finish() {
             toggleElements(false)
@@ -408,6 +408,10 @@
                 };
 
                 function keyDown(e) {
+                    if (e.which >= 49 && e.which <= 57) {
+                        $scope.gotoStep(e.which - 48);
+                        return;
+                    }
                     switch (e.which) {
                         case 37:
                             $scope.previous();

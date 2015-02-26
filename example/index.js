@@ -18,7 +18,7 @@
                 content: "No more defining the position for every step! Try resizing your browser..."
             }, {
                 target: '#start-demo',
-                content: "I even know when to step aside when your browser gets to short :)"
+                content: "I even know when to step aside when your browser gets too short :)"
             }, {
                 target: '#feature3',
                 content: "Promises are passed around and resolved like candy. Yes, that means asyncronous hooks for tour progression!"
