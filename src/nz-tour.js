@@ -413,6 +413,7 @@
                             $scope.previous();
                             return;
                         case 39:
+                        case 13:
                             $scope.next();
                             return;
                         case 27:
