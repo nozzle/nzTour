@@ -16,6 +16,7 @@ html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockq
     border: 0;
     font: inherit;
     vertical-align: baseline;
+    max-width: 100%;
 }
 /* HTML5 display-role reset for older browsers */
 
@@ -362,6 +363,7 @@ button:focus {
     outline: none;
 }
 #vader {
+    pointer-events: none;
     position: fixed;
     top: 50%;
     left: 5px;
