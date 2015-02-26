@@ -66,11 +66,18 @@ var tour = {
         nextText: 'Next',
         finishText: 'Finish',
         animationDuration: 400, // Animation Duration for the box and mask
+        placementPriority: ['bottom', 'right', 'top','left'],
         dark: false // Dark mode (Works great with `mask.visible = false`)
     },
 	steps: []
 }
 ```
+
+## Shortcut Keys
+
+*   Left/Right Arrow keys - Previous/Next
+*   Esc - Abort the tour
+*   1-9 - Goto step 1-9
 
 ## API
 
@@ -143,8 +150,10 @@ var tour = {
 
 ## Roadmap & Contributing
 
-1. Remove dependency on jQuery
-2. Use angular $animate for animations and class changes
-3. Add more hooks and config for customization
+*   Reduce footprint
+*   Dynamic Masking (opening select boxes and dynamically moving content)
+*   Remove dependency on jQuery
+*   Use angular $animate for animations and class changes
+*   Add more hooks and config for customization
 
 All PR's and contributions are more than welcome!

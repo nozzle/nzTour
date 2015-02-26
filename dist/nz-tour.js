@@ -68,10 +68,13 @@
         function stop() {
             return doAfter()
                 .then(function() {
-                    return false;
+                    return toggleElements(false);
                 })
-                .then(toggleElements)
-                .then(abort);
+                .then(function() {
+                    service.current.promise.reject();
+                    service.current = false;
+                    return true;
+                });
         }
 
         function pause() {
@@ -157,15 +160,12 @@
             if (state) {
                 service.box = angular.element($compile('<nz-tour class="hidden"></nz-tour>')(service));
                 angular.element(service.body).append(service.box);
-                $timeout(function() {
-                    service.box.removeClass('hidden');
-                }, 10);
+                service.box.removeClass('hidden');
                 d.resolve();
             } else {
                 service.box.addClass('hidden');
                 $timeout(function() {
-                    service.box.remove();
-                    service.$broadcast('remove');
+                    service.cleanup();
                     d.resolve();
                 }, service.current.tour.config.animationDuration);
             }
@@ -225,11 +225,6 @@
                 });
         }
 
-        function abort() {
-            service.current.promise.reject();
-            service.current = false;
-            return true;
-        }
 
         function hide() {
 
@@ -310,7 +305,6 @@
                     maskTransitions = true;
 
                 var els = {
-
                     window: angular.element(window),
                     wrap: el.find('#nzTour-box-wrap'),
                     box: el.find('#nzTour-box'),
@@ -322,13 +316,11 @@
                     actions: el.find('#nzTour-actions'),
                     previous: el.find('#nzTour-previous'),
                     next: el.find('#nzTour-next'),
-                    masks: {
-                        wrap: el.find('.nzTour-masks'),
-                        top: el.find('.nzTour-masks .top'),
-                        right: el.find('.nzTour-masks .right'),
-                        bottom: el.find('.nzTour-masks .bottom'),
-                        left: el.find('.nzTour-masks .left'),
-                    },
+                    masks_wrap: el.find('.nzTour-masks'),
+                    masks_top: el.find('.nzTour-masks .top'),
+                    masks_right: el.find('.nzTour-masks .right'),
+                    masks_bottom: el.find('.nzTour-masks .bottom'),
+                    masks_left: el.find('.nzTour-masks .left'),
                     scroll: angular.element(config.scrollBox),
                     target: false,
                 };
@@ -346,7 +338,7 @@
                 toggleBoxTransitions(true);
 
                 // Mask Events?
-                els.masks.wrap.css('pointer-events', config.mask.clickThrough ? 'none' : 'all');
+                els.masks_wrap.css('pointer-events', config.mask.clickThrough ? 'none' : 'all');
 
                 // Dark Box?
                 if (config.dark) {
@@ -355,20 +347,18 @@
                 }
 
                 // Mask Background Color
-                els.masks.top.add(els.masks.right).add(els.masks.bottom).add(els.masks.left).css({
+                els.masks_top.add(els.masks_right).add(els.masks_bottom).add(els.masks_left).css({
                     'background-color': config.mask.color
                 });
 
 
 
                 // Step Update Listener
-                $scope.$on('step', updateStep);
-
-
-
+                var stepUpdater = $scope.$on('step', updateStep);
                 // Thottle for 60fps
                 var onWindowScrollDebounced = $scope.throttle(onWindowScroll, 16);
                 var stopScrollingDebounced = $scope.debounce(stopScrolling, 100);
+
                 // Key Bindings
                 els.window.bind('keydown', keyDown);
                 // window scroll, resize bindings
@@ -379,21 +369,26 @@
                 window.addWheelListener(els.content[0], onBoxScroll);
                 // mask scroll bindings
                 if (config.mask.scrollThrough === false) {
-                    window.addWheelListener(els.masks[0], stopMaskScroll);
+                    window.addWheelListener(els.masks_wrap, stopMaskScroll);
                 }
 
                 // Event Cleanup
-                $scope.$on('remove', function() {
-                    els.window.unbind('resize scroll', onWindowScrollDebounced);
+                $scope.cleanup = function cleanup() {
+                    stepUpdater();
                     els.window.unbind('keydown', keyDown);
+                    els.window.unbind('resize scroll', onWindowScrollDebounced);
+                    window.removeWheelListener(window, onWindowScrollDebounced);
                     els.content.unbind('scroll', onBoxScroll);
-                    // els.window.removeWheelListener(content[0], onBoxScroll);
+                    window.removeWheelListener(els.content[0], onBoxScroll);
 
                     if (config.mask.scrollThrough === false) {
-                        //els.window.removeWheelListener(els.masks.all[0], stopMaskScroll);
+                        window.removeWheelListener(els.masks_wrap[0], stopMaskScroll);
                     }
-                });
+                    els = {};
+                    el.remove();
+                };
 
+                window.tanner = $scope;
 
 
 
@@ -417,7 +412,6 @@
                             $scope.previous();
                             return;
                         case 39:
-                        case 13:
                             $scope.next();
                             return;
                         case 27:
@@ -426,6 +420,7 @@
                         case 38:
                         case 40:
                             onWindowScrollDebounced();
+                            return;
                     }
                 }
 
@@ -437,7 +432,7 @@
                 }
 
                 function toggleMaskTransitions(state) {
-                    var group = els.masks.top.add(els.masks.right).add(els.masks.bottom).add(els.masks.left);
+                    var group = els.masks_top.add(els.masks_right).add(els.masks_bottom).add(els.masks_left);
                     if (state) {
                         maskTransitions = true;
                         group.css('transition', 'all ' + config.animationDuration + 'ms ease');
@@ -473,13 +468,13 @@
                     if (!up && (innerContent.height() - content.height() == scrollTop)) {
                         return prevent(e);
                     }
+                }
 
-                    function prevent(e) {
-                        e.stopPropagation(e);
-                        e.preventDefault(e);
-                        e.returnValue = false;
-                        return false;
-                    }
+                function prevent(e) {
+                    e.stopPropagation(e);
+                    e.preventDefault(e);
+                    e.returnValue = false;
+                    return false;
                 }
 
                 function onWindowScroll() {
@@ -983,18 +978,18 @@
                     var d = $q.defer();
 
                     if (!els.target) {
-                        els.masks.top.css({
+                        els.masks_top.css({
                             height: '0px'
                         });
-                        els.masks.bottom.css({
+                        els.masks_bottom.css({
                             height: '0px'
                         });
-                        els.masks.left.css({
+                        els.masks_left.css({
                             top: '0px',
                             height: '100%',
                             width: '0px'
                         });
-                        els.masks.right.css({
+                        els.masks_right.css({
                             top: '0px',
                             height: '100%',
                             width: '0px'
@@ -1002,20 +997,20 @@
                         return;
                     }
 
-                    els.masks.top.css({
+                    els.masks_top.css({
                         height: dims.target.offset.top + 'px',
                         top: dims.target.offset.top < 0 ? dims.target.offset.top + 'px' : 0
                     });
-                    els.masks.bottom.css({
+                    els.masks_bottom.css({
                         height: dims.target.offset.fromBottom + 'px',
                         bottom: dims.target.offset.fromBottom < 0 ? dims.target.offset.fromBottom + 'px' : 0
                     });
-                    els.masks.left.css({
+                    els.masks_left.css({
                         top: dims.target.offset.top + 'px',
                         height: dims.target.height + 'px',
                         width: dims.target.offset.left + 'px'
                     });
-                    els.masks.right.css({
+                    els.masks_right.css({
                         top: dims.target.offset.top + 'px',
                         height: dims.target.height + 'px',
                         width: dims.target.offset.fromRight + 'px'
@@ -1054,8 +1049,10 @@
     // detect event model
     if (window.addEventListener) {
         _addEventListener = "addEventListener";
+        _removeEventListener = "removeEventListener";
     } else {
         _addEventListener = "attachEvent";
+        _removeEventListener = "detachEvent";
         prefix = "on";
     }
 
@@ -1073,39 +1070,53 @@
         }
     };
 
+    window.removeWheelListener = function(elem, callback, useCapture) {
+        _removeWheelListener(elem, support, callback, useCapture);
+
+        // handle MozMousePixelScroll in older Firefox
+        if (support == "DOMMouseScroll") {
+            _removeWheelListener(elem, "MozMousePixelScroll", callback, useCapture);
+        }
+    };
+
+    function _removeWheelListener(elem, eventName, callback, useCapture) {
+        elem[_removeEventListener](prefix + eventName, support == "wheel" ? callback : original, useCapture || false);
+    }
+
     function _addWheelListener(elem, eventName, callback, useCapture) {
-        elem[_addEventListener](prefix + eventName, support == "wheel" ? callback : function(originalEvent) {
-            !originalEvent && (originalEvent = window.event);
+        elem[_addEventListener](prefix + eventName, support == "wheel" ? callback : original, useCapture || false);
+    }
 
-            // create a normalized event object
-            var event = {
-                // keep a ref to the original event object
-                originalEvent: originalEvent,
-                target: originalEvent.target || originalEvent.srcElement,
-                type: "wheel",
-                deltaMode: originalEvent.type == "MozMousePixelScroll" ? 0 : 1,
-                deltaX: 0,
-                deltaZ: 0,
-                preventDefault: function() {
-                    originalEvent.preventDefault ?
-                        originalEvent.preventDefault() :
-                        originalEvent.returnValue = false;
-                }
-            };
+    function original(originalEvent) {
+        !originalEvent && (originalEvent = window.event);
 
-            // calculate deltaY (and deltaX) according to the event
-            if (support == "mousewheel") {
-                event.deltaY = -1 / 40 * originalEvent.wheelDelta;
-                // Webkit also support wheelDeltaX
-                originalEvent.wheelDeltaX && (event.deltaX = -1 / 40 * originalEvent.wheelDeltaX);
-            } else {
-                event.deltaY = originalEvent.detail;
+        // create a normalized event object
+        var event = {
+            // keep a ref to the original event object
+            originalEvent: originalEvent,
+            target: originalEvent.target || originalEvent.srcElement,
+            type: "wheel",
+            deltaMode: originalEvent.type == "MozMousePixelScroll" ? 0 : 1,
+            deltaX: 0,
+            deltaZ: 0,
+            preventDefault: function() {
+                originalEvent.preventDefault ?
+                    originalEvent.preventDefault() :
+                    originalEvent.returnValue = false;
             }
+        };
 
-            // it's time to fire the callback
-            return callback(event);
+        // calculate deltaY (and deltaX) according to the event
+        if (support == "mousewheel") {
+            event.deltaY = -1 / 40 * originalEvent.wheelDelta;
+            // Webkit also support wheelDeltaX
+            originalEvent.wheelDeltaX && (event.deltaX = -1 / 40 * originalEvent.wheelDeltaX);
+        } else {
+            event.deltaY = originalEvent.detail;
+        }
 
-        }, useCapture || false);
+        // it's time to fire the callback
+        return callback(event);
     }
 
 
