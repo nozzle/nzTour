@@ -1,6 +1,6 @@
 {
     "name": "nz-tour",
-    "version": "0.9.1",
+    "version": "1.0.0",
     "description": "Touring and on-boarding made simple for AngularJS",
     "main": [
         "dist/nz-tour.min.js",
