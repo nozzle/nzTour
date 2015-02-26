@@ -410,12 +410,15 @@
                     switch (e.which) {
                         case 37:
                             $scope.previous();
+                            prevent(e);
                             return;
                         case 39:
                             $scope.next();
+                            prevent(e);
                             return;
                         case 27:
                             $scope.stop();
+                            prevent(e);
                             return;
                         case 38:
                         case 40:

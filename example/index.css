@@ -362,6 +362,7 @@ button:focus {
     outline: none;
 }
 #vader {
+    pointer-events: none;
     position: fixed;
     top: 50%;
     left: 5px;
