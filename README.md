@@ -1,4 +1,6 @@
 # nzTour
+
+[![Join the chat at https://gitter.im/nozzle/nzTour](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/nozzle/nzTour?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 Touring and on-boarding made simple for AngularJS.
 
 ## [Awesome Demo](http://nozzle.github.io/nzTour)
