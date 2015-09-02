@@ -705,6 +705,8 @@
 
                 function moveBox() {
 
+                    var step = $scope.current.tour.steps[$scope.current.step];
+
                     var d = $q.defer();
 
                     // Default Position?
@@ -721,12 +723,21 @@
                     };
 
                     var placed = false;
-                    angular.forEach(config.placementPriority, function(priority) {
-                        if (!placed && placementOptions[priority]()) {
-                            placed = true;
-                            d.resolve();
-                        }
-                    });
+
+                    // If placement is supplied, use that rather than positioning dynamically
+
+                    if (step.placement && placementOptions[step.placement]) {
+                        placementOptions[step.placement]();
+                        placed = true;
+                        d.resolve();
+                    } else {
+                        angular.forEach(config.placementPriority, function(priority) {
+                            if (!placed && placementOptions[priority]()) {
+                                placed = true;
+                                d.resolve();
+                            }
+                        });
+                    }
 
                     if (!placed) {
                         placeInside('bottom', 'center');

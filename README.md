@@ -30,7 +30,8 @@ var tour = {
         content: 'This is the first step!',
     }, {
         target: '.some .other .element',
-        content: 'Blah blah blah.',
+        placement: 'left',
+        content: 'Blah blah blah. I will show up on the left',
     }, {
         target: '#menu-element',
         content: 'I guess this is a menu!',
