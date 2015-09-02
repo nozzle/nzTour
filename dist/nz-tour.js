@@ -133,11 +133,24 @@
             tour.config = angular.extendDeep({}, service.config, tour.config);
 
             // Check for valid priorities
-            var hasValidPriorities = true;
-            angular.forEach(tour.config.placementPriority, function(priority) {
-                if (hasValidPriorities && service.config.placementPriority.indexOf(priority) == -1) {
-                    hasValidPriorities = false;
-                    tour.config.placementOptions = service.config.placementPriority;
+            var validPriorities = function (priorities) {
+                if (!angular.isArray(priorities)) { return false; }
+                for (var i = 0; i < priorities.length; i += 1) {
+                    if (service.config.placementPriority.indexOf(priorities[i]) === -1) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            if (!validPriorities(tour.config.placementPriority)) {
+                tour.config.placementPriority = service.config.placementPriority;
+            }
+
+            angular.forEach(tour.steps, function (step) {
+                if (!step.placementPriority) { return; }
+                if (!validPriorities(step.placementPriority)) {
+                    delete step.placementPriority;
                 }
             });
 
@@ -705,6 +718,8 @@
 
                 function moveBox() {
 
+                    var step = $scope.current.tour.steps[$scope.current.step];
+
                     var d = $q.defer();
 
                     // Default Position?
@@ -721,7 +736,7 @@
                     };
 
                     var placed = false;
-                    angular.forEach(config.placementPriority, function(priority) {
+                    angular.forEach((step.placementPriority || config.placementPriority), function(priority) {
                         if (!placed && placementOptions[priority]()) {
                             placed = true;
                             d.resolve();

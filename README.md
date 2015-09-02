@@ -30,7 +30,8 @@ var tour = {
         content: 'This is the first step!',
     }, {
         target: '.some .other .element',
-        content: 'Blah blah blah.',
+        placementPriority: [ 'right', 'top', 'bottom', 'left' ],
+        content: 'Blah blah blah. I prefer to show up on the right.',
     }, {
         target: '#menu-element',
         content: 'I guess this is a menu!',
@@ -152,6 +153,7 @@ var tour = {
 
 ## Roadmap & Contributing
 
+*   Update example
 *   Reduce footprint
 *   Dynamic Masking (opening select boxes and dynamically moving content)
 *   Remove dependency on jQuery
