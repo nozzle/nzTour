@@ -17,6 +17,10 @@
                 target: '#feature2',
                 content: "No more defining the position for every step! Try resizing your browser..."
             }, {
+                target: '#feature2',
+                placement: 'top',
+                content: "Unless of course you want to define a position. I'm on the top now!"
+            }, {
                 target: '#start-demo',
                 content: "I even know when to step aside when your browser gets too short :)"
             }, {

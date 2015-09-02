@@ -1,7 +1,7 @@
 (function() {
     var module = angular.module('nzTour', []);
 
-    module.factory('nzTour', function($q, $rootScope, $compile, $timeout) {
+    module.factory('nzTour', ["$q", "$rootScope", "$compile", "$timeout", function($q, $rootScope, $compile, $timeout) {
 
         var service = $rootScope.$new();
 
@@ -13,18 +13,19 @@
                     visible: true,
                     clickThrough: false,
                     clickExit: false,
+                    scrollThrough: true,
                     color: 'rgba(0,0,0,.7)'
                 },
                 dark: false,
-                container: 'body',
-                scrollBox: 'body',
+                scrollBox: navigator.userAgent.indexOf('AppleWebKit') != -1 ? "body" : "html",
                 previousText: 'Previous',
                 nextText: 'Next',
                 finishText: 'Finish',
                 animationDuration: 400,
+                placementPriority: ['bottom', 'right', 'top', 'left']
             },
             current: false,
-            container: false,
+            body: angular.element('body'),
             box: false,
 
             // Methods
@@ -36,6 +37,7 @@
             gotoStep: gotoStep,
 
             //Utils
+            throttle: throttle,
             debounce: debounce
         });
 
@@ -64,8 +66,15 @@
         }
 
         function stop() {
-            return toggleElements(false)
-                .then(abort);
+            return doAfter()
+                .then(function() {
+                    return toggleElements(false);
+                })
+                .then(function() {
+                    service.current.promise.reject();
+                    service.current = false;
+                    return true;
+                });
         }
 
         function pause() {
@@ -75,32 +84,39 @@
             return;
         }
 
-        function next(skipAfter) {
+        function next() {
             if (!service.current) {
                 service.current.reject();
             }
 
             return doAfter()
                 .then(checkHasNext)
-                .then(queueNext)
+                .then(function() {
+                    service.current.step++;
+                })
                 .then(doStep);
         }
 
         function previous() {
-            var d = $q.defer();
-            if (service.current.step > 0) {
-                service.current.step--;
-                return doStep();
-            }
-            d.reject();
-            return d.promise;
+            return doAfter()
+                .then(function() {
+                    if (service.current.step > 0) {
+                        service.current.step--;
+                        return true;
+                    }
+                    return $q.reject();
+                })
+                .then(doStep);
         }
 
         function gotoStep(i) {
             var d = $q.defer();
             if (i > 0 && i <= service.current.tour.steps.length) {
-                service.current.step = i - 2;
-                return doStep(true);
+                return doAfter()
+                    .then(function() {
+                        service.current.step = i;
+                    })
+                    .then(doStep);
             }
             d.reject();
             return d.promise;
@@ -116,7 +132,14 @@
 
             tour.config = angular.extendDeep({}, service.config, tour.config);
 
-            console.log(tour);
+            // Check for valid priorities
+            var hasValidPriorities = true;
+            angular.forEach(tour.config.placementPriority, function(priority) {
+                if (hasValidPriorities && service.config.placementPriority.indexOf(priority) == -1) {
+                    hasValidPriorities = false;
+                    tour.config.placementOptions = service.config.placementPriority;
+                }
+            });
 
             service.current = {
                 tour: tour,
@@ -136,16 +159,13 @@
 
             if (state) {
                 service.box = angular.element($compile('<nz-tour class="hidden"></nz-tour>')(service));
-                angular.element(tour.config.container).append(service.box);
-                $timeout(function() {
-                    service.box.removeClass('hidden');
-                }, 10);
+                angular.element(service.body).append(service.box);
+                service.box.removeClass('hidden');
                 d.resolve();
             } else {
                 service.box.addClass('hidden');
                 $timeout(function() {
-                    service.box.remove();
-                    service.$broadcast('remove');
+                    service.cleanup();
                     d.resolve();
                 }, service.current.tour.config.animationDuration);
             }
@@ -194,12 +214,7 @@
             return d.promise;
         }
 
-        function queueNext() {
-            var d = $q.defer();
-            service.current.step++;
-            d.resolve();
-            return d.promise;
-        }
+
 
         function finish() {
             toggleElements(false)
@@ -210,11 +225,6 @@
                 });
         }
 
-        function abort() {
-            service.current.promise.reject();
-            service.current = false;
-            return true;
-        }
 
         function hide() {
 
@@ -222,6 +232,19 @@
 
         function show() {
 
+        }
+
+        function throttle(callback, limit) {
+            var wait = false;
+            return function() {
+                if (!wait) {
+                    callback.call();
+                    wait = true;
+                    $timeout(function() {
+                        wait = false;
+                    }, limit);
+                }
+            };
         }
 
         function debounce(func, wait, immediate) {
@@ -234,14 +257,14 @@
                     if (!immediate) func.apply(context, args);
                 };
                 var callNow = immediate && !timeout;
-                $timeout.cancel(timeout);
-                timeout = $timeout(later, wait);
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
                 if (callNow) func.apply(context, args);
             };
         }
-    });
+    }]);
 
-    module.directive('nzTour', function($q, $timeout, $window) {
+    module.directive('nzTour', ["$q", "$timeout", "$window", function($q, $timeout, $window) {
         return {
             template: [
                 '<div id="nzTour-box-wrap">',
@@ -251,7 +274,7 @@
                 '        <div id="nzTour-length">{{view.length}}</div>',
                 '        <div id="nzTour-close" ng-click="stop()">&#10005</div>',
                 '        <div id="nzTour-content">',
-                '           <div id="nzTour-inner-content">{{view.content}}</div>',
+                '           <div id="nzTour-inner-content"></div>',
                 '        </div>',
                 '        <div id="nzTour-actions">',
                 '            <button id="nzTour-previous" ng-show="view.step > 0" ng-click="previous()" class="ng-hide">{{view.previousText}}</button>',
@@ -270,281 +293,570 @@
 
                 // $scope is the actual nzTour service :)
 
-                var container = angular.element($scope.current.tour.config.container),
-                    scrollBox = angular.element($scope.current.tour.config.scrollBox),
-                    masks = {
-                        all: el.find('.nzTour-masks'),
-                        top: el.find('.nzTour-masks .top'),
-                        right: el.find('.nzTour-masks .right'),
-                        bottom: el.find('.nzTour-masks .bottom'),
-                        left: el.find('.nzTour-masks .left'),
-                    },
-                    wrap = el.find('#nzTour-box-wrap'),
-                    box = el.find('#nzTour-box'),
-                    tip = el.find('#nzTour-tip'),
-                    step = el.find('#nzTour-step'),
-                    close = el.find('#nzTour-close'),
-                    content = el.find('#nzTour-content'),
-                    actions = el.find('#nzTour-actions'),
-                    previous = el.find('#nzTour-previous'),
-                    next = el.find('#nzTour-next'),
-                    scrolling = false,
+                var config = $scope.current.tour.config,
+                    target = false,
+                    seeking = false,
                     margin = 15,
                     vMargin = margin + 'px 0',
-                    hMargin = '0 ' + margin + 'px';
+                    hMargin = '0 ' + margin + 'px',
+                    maxHeight = 120,
+                    maxWidth = 250,
+                    scrolling = false,
+                    maskTransitions = true;
 
-                // Mask Events?
-                masks.all.css('pointer-events', $scope.current.tour.config.mask.clickThrough ? 'none' : 'all');
+                var els = {
+                    window: angular.element(window),
+                    wrap: el.find('#nzTour-box-wrap'),
+                    box: el.find('#nzTour-box'),
+                    tip: el.find('#nzTour-tip'),
+                    step: el.find('#nzTour-step'),
+                    close: el.find('#nzTour-close'),
+                    content: el.find('#nzTour-content'),
+                    innerContent: el.find('#nzTour-inner-content'),
+                    actions: el.find('#nzTour-actions'),
+                    previous: el.find('#nzTour-previous'),
+                    next: el.find('#nzTour-next'),
+                    masks_wrap: el.find('.nzTour-masks'),
+                    masks_top: el.find('.nzTour-masks .top'),
+                    masks_right: el.find('.nzTour-masks .right'),
+                    masks_bottom: el.find('.nzTour-masks .bottom'),
+                    masks_left: el.find('.nzTour-masks .left'),
+                    scroll: angular.element(config.scrollBox),
+                    target: false,
+                };
 
-                // Dark Box?
-                if ($scope.current.tour.config.dark) {
-                    box.addClass('dark-box');
-                    margin = 7;
-                }
-
-                wrap.add(box).add(tip).css('transition', 'all ' + $scope.current.tour.config.animationDuration + 'ms ease');
-                masks.top.add(masks.right).add(masks.bottom).add(masks.left).css({
-                    'transition': 'all ' + $scope.current.tour.config.animationDuration + 'ms ease',
-                    'background-color': $scope.current.tour.config.mask.color
-                });
-
-                $scope.$on('step', updateStep);
-
-                // Scroll and Resize Tracking
-                var onWindowScrollDebounced = $scope.debounce(onWindowScroll, 100);
-                $scope.$on('remove', function() {
-                    angular.element($window).off('resize', onWindowScrollDebounced);
-                    scrollBox.off('scroll', onWindowScrollDebounced);
-                });
-                angular.element($window).on('resize', onWindowScrollDebounced);
-                scrollBox.on('scroll', onWindowScrollDebounced);
-
-                $scope.tryStop = function() {
-                    if ($scope.current.tour.config.mask.clickExit) {
-                        $scope.stop();
-                    }
+                var dims = {
+                    window: {},
+                    scroll: {},
+                    target: {},
                 };
 
 
 
+                // Turn on Transitions
+                toggleMaskTransitions(true);
+                toggleBoxTransitions(true);
+
+                // Mask Events?
+                els.masks_wrap.css('pointer-events', config.mask.clickThrough ? 'none' : 'all');
+
+                // Dark Box?
+                if (config.dark) {
+                    els.box.addClass('dark-box');
+                    margin = 7;
+                }
+
+                // Mask Background Color
+                els.masks_top.add(els.masks_right).add(els.masks_bottom).add(els.masks_left).css({
+                    'background-color': config.mask.color
+                });
+
+
+
+                // Step Update Listener
+                var stepUpdater = $scope.$on('step', updateStep);
+                // Thottle for 60fps
+                var onWindowScrollDebounced = $scope.throttle(onWindowScroll, 16);
+                var stopScrollingDebounced = $scope.debounce(stopScrolling, 100);
+
+                // Key Bindings
+                els.window.bind('keydown', keyDown);
+                // window scroll, resize bindings
+                els.window.bind('resize scroll', onWindowScrollDebounced);
+                window.addWheelListener(window, onWindowScrollDebounced);
+                // content scroll bindings
+                els.content.bind('scroll', onBoxScroll);
+                window.addWheelListener(els.content[0], onBoxScroll);
+                // mask scroll bindings
+                if (config.mask.scrollThrough === false) {
+                    window.addWheelListener(els.masks_wrap, stopMaskScroll);
+                }
+
+                // Event Cleanup
+                $scope.cleanup = function cleanup() {
+                    stepUpdater();
+                    els.window.unbind('keydown', keyDown);
+                    els.window.unbind('resize scroll', onWindowScrollDebounced);
+                    window.removeWheelListener(window, onWindowScrollDebounced);
+                    els.content.unbind('scroll', onBoxScroll);
+                    window.removeWheelListener(els.content[0], onBoxScroll);
+
+                    if (config.mask.scrollThrough === false) {
+                        window.removeWheelListener(els.masks_wrap[0], stopMaskScroll);
+                    }
+                    els = {};
+                    el.remove();
+                };
+
+                window.tanner = $scope;
 
 
 
 
 
+                // Events
 
-                function onWindowScroll() {
-                    if (scrolling) {
+                $scope.tryStop = function() {
+                    if (config.mask.clickExit) {
+                        $scope.stop();
+                    }
+                };
+
+                function keyDown(e) {
+                    if (e.which >= 49 && e.which <= 57) {
+                        $scope.gotoStep(e.which - 48);
                         return;
                     }
-                    if ($scope.view) {
-                        updateStep(null, $scope.view.step);
+                    switch (e.which) {
+                        case 37:
+                            $scope.previous();
+                            prevent(e);
+                            return;
+                        case 39:
+                            $scope.next();
+                            prevent(e);
+                            return;
+                        case 27:
+                            $scope.stop();
+                            prevent(e);
+                            return;
+                        case 38:
+                        case 40:
+                            onWindowScrollDebounced();
+                            return;
                     }
                 }
 
-                function updateStep(e, step) {
-                    $scope.view = {
-                        step: step,
-                        length: $scope.current.tour.steps.length,
-                        content: $scope.current.tour.steps[step].content,
-                        previousText: $scope.current.tour.config.previousText,
-                        nextText: step == $scope.current.tour.steps.length - 1 ? $scope.current.tour.config.finishText : $scope.current.tour.config.nextText
-                    };
-                    return findTarget($scope.current.tour.steps[step].target)
+                function stopMaskScroll(e) {
+                    e.stopPropagation(e);
+                    e.preventDefault(e);
+                    e.returnValue = false;
+                    return false;
+                }
+
+                function toggleMaskTransitions(state) {
+                    var group = els.masks_top.add(els.masks_right).add(els.masks_bottom).add(els.masks_left);
+                    if (state) {
+                        maskTransitions = true;
+                        group.css('transition', 'all ' + config.animationDuration + 'ms ease');
+                    } else {
+                        maskTransitions = false;
+                        group.css('transition', 'all 0');
+                    }
+                }
+
+                function toggleBoxTransitions(state) {
+                    var group = els.wrap.add(els.box).add(els.tip);
+                    if (state) {
+                        group.css('transition', 'all ' + config.animationDuration + 'ms ease');
+                    } else {
+                        group.css('transition', 'all 0');
+                    }
+                }
+
+                function onBoxScroll(e) {
+                    var delta;
+                    if (e.type == 'DOMMouseScroll') {
+                        delta = e.detail * -40;
+                    } else {
+                        delta = e.wheelDelta;
+                    }
+                    var up = delta > 0;
+                    var scrollTop = els.content.scrollTop();
+
+
+                    if (up && !scrollTop) {
+                        return prevent(e);
+                    }
+                    if (!up && (innerContent.height() - content.height() == scrollTop)) {
+                        return prevent(e);
+                    }
+                }
+
+                function prevent(e) {
+                    e.stopPropagation(e);
+                    e.preventDefault(e);
+                    e.returnValue = false;
+                    return false;
+                }
+
+                function onWindowScroll() {
+                    if (seeking) {
+                        return;
+                    }
+
+                    scrolling = true;
+                    toggleMaskTransitions(false);
+                    stopScrollingDebounced();
+
+                    findTarget()
+                        .then(getDimensions)
                         .then(scrollToTarget)
+                        .then(getDimensions)
                         .then(moveToTarget);
                 }
 
-                function findTarget(selector) {
-                    var d = $q.defer();
-                    var target = angular.element(selector);
-                    if (!target.length) {
-                        d.resolve(false);
-                    } else {
-                        d.resolve(angular.element(target[0]));
-                    }
-                    return d.promise;
+                function stopScrolling() {
+                    scrolling = false;
+                    toggleMaskTransitions(true);
                 }
 
-                function scrollToTarget(element) {
-                    var d = $q.defer();
+                function updateStep(e, step) {
 
-                    if (!element) {
-                        d.resolve();
-                        return d.promise;
-                    }
+                    els.target = false;
+                    var steps = $scope.current.tour.steps;
 
-                    if (isVisible(element)) {
-                        d.resolve(element);
-                    } else {
+                    $scope.view = {
+                        step: step,
+                        length: steps.length,
+                        previousText: config.previousText,
+                        nextText: step == steps.length - 1 ? config.finishText : config.nextText
+                    };
+                    //Don't mess around with angular sanitize for now. Add compile and sanitize later...
+                    els.innerContent.html(steps[step].content);
+                    // Scroll Back to the top
+                    els.content.scrollTop(0);
 
-                        return doScroll(element);
-                    }
+                    // Reset Scrolling and Seeking states
+                    seeking = true;
 
-                    d.resolve(element);
-                    return d.promise;
-
-                    function isVisible(el) {
-
-                        var windowHeight = $(window).height();
-                        var boxHeight = windowHeight < scrollBox.height() ? windowHeight : scrollBoxHeight;
-
-                        var viewTop = scrollBox.scrollTop();
-                        var viewBottom = viewTop + boxHeight;
-
-                        var elTop = el.offset().top - scrollBox.offset().top + viewTop;
-                        var elBottom = elTop + el.height();
-
-                        console.log(elBottom, viewBottom, elTop, viewTop);
-
-                        // Is element to large to fit?
-                        if (el.height() > boxHeight) {
-                            // Is any part visible?
-                            return ((elBottom >= viewBottom) || (elTop <= viewTop));
-                        }
-
-                        console.log(((elBottom <= viewBottom) && (elTop >= viewTop)));
-
-                        return ((elBottom <= viewBottom) && (elTop >= viewTop));
-                    }
-
-                    function doScroll(element) {
-                        var d = $q.defer();
-
-                        scrolling = true;
-
-                        angular.element(scrollBox).animate({
-                            //scrollTop: element.offset().top - scrollBox.offset().top + scrollBox.scrollTop() - margin
-                        }, $scope.current.tour.config.animationDuration, function() {
-                            d.resolve(element);
-                            scrolling = false;
+                    return findTarget(step)
+                        .then(getDimensions)
+                        .then(scrollToTarget)
+                        .then(getDimensions)
+                        .then(moveToTarget)
+                        .then(function() {
+                            seeking = false;
                         });
-
-                        return d.promise;
-                    }
                 }
 
-                function moveToTarget(element) {
+
+
+
+
+
+
+
+                // Internal Functions
+
+                function findTarget(step) {
                     var d = $q.defer();
 
-                    if (!element) {
-                        moveBox();
-                        moveMasks();
-                        return;
+                    if (els.target) {
+                        d.resolve(target);
+                    } else {
+                        var foundTarget = angular.element($scope.current.tour.steps[step].target);
+                        if (!foundTarget.length) {
+                            d.resolve(false);
+                        } else {
+                            els.target = angular.element(foundTarget[0]);
+                            d.resolve(els.target);
+                        }
+                    }
+                    return d.promise;
+                }
+
+                function getDimensions() {
+
+                    var d = $q.defer();
+
+                    if (!els.target) {
+                        d.resolve();
+                        return d.promise;
                     }
 
-                    var dimensions = getDimensions(element);
+                    // Window
 
-                    moveBox(dimensions);
-                    moveMasks(dimensions);
+                    dims.window = {
+                        width: els.window.width(),
+                        height: els.window.height(),
+                    };
 
-                    $timeout(function() {
-                        d.resolve();
-                    }, $scope.current.tour.config.animationDuration);
+
+                    // Scrollbox 
+
+                    dims.scroll = {
+                        width: els.scroll.outerWidth(),
+                        height: els.scroll.outerHeight(),
+                        offset: els.scroll.offset(),
+                        scroll: {
+                            top: els.scroll.scrollTop(),
+                            left: els.scroll.scrollLeft(),
+                        }
+                    };
+
+                    // Round Offsets
+                    angular.forEach(dims.scroll.offset, function(o, i) {
+                        dims.scroll.offset[i] = Math.ceil(o);
+                    });
+
+                    dims.scroll.height = (dims.scroll.height + dims.scroll.offset.top > dims.window.height) ? dims.window.height : dims.scroll.height;
+                    dims.scroll.width = (dims.scroll.width + dims.scroll.offset.left > dims.window.width) ? dims.window.width : dims.scroll.width;
+                    dims.scroll.offset.toBottom = dims.scroll.height + dims.scroll.offset.top;
+                    dims.scroll.offset.toRight = dims.scroll.width + dims.scroll.offset.left;
+                    dims.scroll.offset.fromBottom = dims.window.height - dims.scroll.offset.top - dims.scroll.height;
+                    dims.scroll.offset.fromRight = dims.window.width - dims.scroll.offset.left - dims.scroll.width;
+
+
+                    // Target
+
+                    dims.target = {
+                        width: els.target.outerWidth(),
+                        height: els.target.outerHeight(),
+                        offset: els.target.offset(),
+                    };
+
+                    // For an html/body scrollbox
+                    if (config.scrollBox == 'body' || config.scrollBox == 'html') {
+                        dims.target.offset.top -= dims.scroll.scroll.top;
+                    }
+
+                    // Round Offsets
+                    angular.forEach(dims.target.offset, function(o, i) {
+                        dims.target.offset[i] = Math.ceil(o);
+                    });
+
+                    // Get Target Bottom and right
+                    dims.target.offset.toBottom = dims.target.offset.top + dims.target.height;
+                    dims.target.offset.toRight = dims.target.offset.left + dims.target.width;
+                    dims.target.offset.fromBottom = dims.window.height - dims.target.offset.top - dims.target.height;
+                    dims.target.offset.fromRight = dims.window.width - dims.target.offset.left - dims.target.width;
+
+                    // Get Target Margin Points
+                    dims.target.margins = {
+                        offset: {
+                            top: dims.target.offset.top - margin,
+                            left: dims.target.offset.left - margin,
+                            toBottom: dims.target.offset.toBottom + margin,
+                            toRight: dims.target.offset.toRight + margin,
+                            fromBottom: dims.target.offset.fromBottom - margin,
+                            fromRight: dims.target.offset.fromRight - margin,
+                        },
+                        height: dims.target.height + margin * 2,
+                        right: dims.target.offset.fromRight + margin * 2
+                    };
+
+                    d.resolve();
 
                     return d.promise;
                 }
 
-                function getDimensions(target) {
-                    var parentElement = angular.element($scope.current.tour.config.container);
-                    var windowHeight = $(window).height();
-                    var child = {
-                        pos: target.offset(),
-                        width: target.outerWidth(),
-                        height: target.outerHeight(),
-                    };
-                    var parent = {
-                        pos: parentElement.offset(),
-                        width: parentElement.width(),
-                        height: parentElement.height() + parentElement.offset().top > windowHeight ? windowHeight : parentElement.height(),
-                    };
-                    var dimensions = {
-                        width: child.width,
-                        height: child.height,
-                        top: child.pos.top - parent.pos.top,
-                        left: child.pos.left - parent.pos.left,
-                        bottom: parent.height - child.pos.top - child.height,
-                        right: parent.width - child.pos.left - child.width,
-                    };
-                    return dimensions;
+                function scrollToTarget() {
+                    var d = $q.defer();
+
+                    if (!els.target) {
+                        d.resolve();
+                        return d.promise;
+                    }
+
+                    var newScrollTop = findScrollTop();
+
+
+                    if (!newScrollTop) {
+                        d.resolve();
+                    } else {
+                        els.scroll.animate({
+                                scrollTop: newScrollTop
+                            }, scrolling ? 0 : config.animationDuration,
+                            function() {
+                                d.resolve();
+                            });
+                    }
+
+                    return d.promise;
                 }
 
-                function moveBox(dimensions) {
+
+                function findScrollTop() {
+                    // Is element to large to fit?
+                    if (dims.target.margins.height > dims.scroll.height) {
+                        // Is the element too far above us?
+                        if (dims.target.offset.toBottom - maxHeight < dims.scroll.offset.top) {
+                            return dims.scroll.scroll.top - (dims.scroll.offset.top - (dims.target.offset.toBottom - maxHeight));
+                        }
+                        // Is the element too far below us?
+                        if (dims.target.offset.top + maxHeight > dims.scroll.offset.toBottom) {
+                            return dims.scroll.scroll.top + ((dims.target.offset.top + maxHeight) - dims.scroll.offset.toBottom);
+                        }
+                        // Must be visible on both ends?
+                        return false;
+                    }
+
+                    // Is Element too far Above Us?
+                    if (dims.target.margins.offset.top < dims.scroll.offset.top) {
+                        return dims.scroll.scroll.top - (dims.scroll.offset.top - dims.target.margins.offset.top);
+                    }
+
+                    // Is Element too far Below Us?
+                    if (dims.target.margins.offset.toBottom > dims.scroll.offset.toBottom) {
+                        return dims.scroll.scroll.top + (dims.target.margins.offset.toBottom - dims.scroll.offset.toBottom);
+                    }
+
+                    return false;
+                }
+
+                function moveToTarget() {
+
+                    return $q.all([
+                        moveBox(),
+                        moveMasks()
+                    ]);
+                }
+
+                function moveBox() {
+
+                    var step = $scope.current.tour.steps[$scope.current.step];
+
+                    var d = $q.defer();
 
                     // Default Position?
-                    if (!dimensions) {
+                    if (!els.target) {
                         placeCentered();
                         return;
                     }
 
-                    // Can Below?
-                    if (dimensions.bottom > 135) {
-                        // Can Centered?
-                        if (dimensions.width > 250) {
-                            placeVertically('bottom', 'center');
-                            return;
-                        }
-                        // Can on the left?
-                        if (dimensions.right + dimensions.width > 250) {
-                            placeVertically('bottom', 'left');
-                            return;
-                        }
-                        // Right, I guess...
-                        placeVertically('bottom', 'right');
+                    var placementOptions = {
+                        bottom: bottom,
+                        right: right,
+                        left: left,
+                        top: top
+                    };
+
+                    var placed = false;
+
+                    // If placement is supplied, use that rather than positioning dynamically
+
+                    if (step.placement && placementOptions[step.placement]) {
+                        placementOptions[step.placement]();
+                        placed = true;
+                        d.resolve();
+                    } else {
+                        angular.forEach(config.placementPriority, function(priority) {
+                            if (!placed && placementOptions[priority]()) {
+                                placed = true;
+                                d.resolve();
+                            }
+                        });
+                    }
+
+                    if (!placed) {
+                        placeInside('bottom', 'center');
+                        d.resolve();
                         return;
                     }
 
-                    // Can Right?
-                    if (dimensions.right > 250) {
-                        // Can Center?
-                        if (dimensions.height > 135) {
-                            placeHorizontally('right', 'center');
-                            return;
+                    return d.promise;
+
+
+                    // Placement Priorities
+
+                    function bottom() {
+                        // Can Below?
+                        if (dims.target.margins.offset.fromBottom > maxHeight) {
+                            // Can Centered?
+                            if (dims.target.width > maxWidth) {
+                                placeVertically('bottom', 'center');
+                                return true;
+                            }
+                            // Can on the left?
+                            if (dims.target.offset.fromRight + dims.target.width > maxWidth) {
+                                placeVertically('bottom', 'left');
+                                return true;
+                            }
+                            // Right, I guess...
+                            placeVertically('bottom', 'right');
+                            return true;
                         }
-                        // can Top?
-                        if (dimensions.bottom + dimensions.height > 135) {
-                            placeHorizontally('right', 'top');
-                            return;
-                        }
-                        placeHorizontally('right', 'bottom');
-                        return;
-                    }
-                    // Can Left?
-                    if (dimensions.left > 250) {
-                        // can Center?
-                        if (dimensions.height > 135) {
-                            placeHorizontally('left', 'center');
-                            return;
-                        }
-                        // can Top?
-                        if (dimensions.bottom + dimensions.height > 135) {
-                            placeHorizontally('left', 'top');
-                            return;
-                        }
-                        placeHorizontally('left', 'bottom');
-                        return;
+                        return false;
                     }
 
-                    // Can Above?
-                    if (dimensions.top > 135) {
-                        // Can Centered?
-                        if (dimensions.width > 250) {
-                            placeVertically('top', 'center');
-                            return;
+                    function right() {
+                        // Can Right?
+                        if (dims.target.margins.offset.fromRight > maxWidth) {
+
+                            // Is Element to Large to fit?
+                            if (dims.target.margins.height > dims.scroll.height) {
+
+                                if (dims.target.offset.top > dims.window.height / 2) {
+                                    placeHorizontally('right', 'top');
+                                    return true;
+                                }
+
+                                if (dims.target.offset.fromBottom > dims.window.height / 2) {
+                                    placeHorizontally('right', 'bottom');
+                                    return true;
+                                }
+
+                                placeHorizontally('right', 'center', true);
+                                return true;
+                            }
+
+                            // Can Center?
+                            if (dims.target.height > maxHeight) {
+                                placeHorizontally('right', 'center');
+                                return true;
+                            }
+                            // can Top?
+                            if (dims.target.offset.fromBottom + dims.target.height > maxHeight) {
+                                placeHorizontally('right', 'top');
+                                return true;
+                            }
+                            placeHorizontally('right', 'bottom');
+                            return true;
                         }
-                        // Can on the left?
-                        if (dimensions.right + dimensions.width > 250) {
-                            placeVertically('top', 'left');
-                            return;
-                        }
-                        // Right, I guess...
-                        placeVertically('top', 'right');
-                        return;
+                        return false;
                     }
 
-                    placeInside('bottom', 'center');
-                    return;
+                    function left() {
+                        // Can Left?
+                        if (dims.target.margins.offset.left > maxWidth) {
+                            // Is Element to Large to fit?
+                            if (dims.target.margins.height > dims.scroll.height) {
+                                placeHorizontally('left', 'center', true);
+                                return true;
+                            }
+                            // can Center?
+                            if (dims.target.height > maxHeight) {
+                                placeHorizontally('left', 'center');
+                                return true;
+                            }
+                            // can Top?
+                            if (dims.target.offset.fromBottom + dims.target.height > maxHeight) {
+                                placeHorizontally('left', 'top');
+                                return true;
+                            }
+                            placeHorizontally('left', 'bottom');
+                            return true;
+                        }
+                        return false;
+                    }
 
+                    function top() {
+                        // Can Above?
+                        if (dims.target.margins.offset.top > maxHeight) {
+                            // Can Centered?
+                            if (dims.target.width > maxWidth) {
+                                placeVertically('top', 'center');
+                                return true;
+                            }
+                            // Can on the left?
+                            if (dims.target.offset.fromRight + dims.target.width > maxWidth) {
+                                placeVertically('top', 'left');
+                                return true;
+                            }
+                            // Right, I guess...
+                            placeVertically('top', 'right');
+                            return true;
+                        }
+                        return false;
+                    }
+
+
+
+
+
+
+                    // Placement functions
 
                     function placeVertically(v, h) {
 
@@ -555,38 +867,38 @@
                         var tipY;
 
                         if (v == 'top') {
-                            top = dimensions.top - margin;
+                            top = dims.target.margins.offset.top;
                             tipY = 'bottom';
                             translateY = '-100%';
                         } else {
-                            top = dimensions.top + dimensions.height + margin;
+                            top = dims.target.margins.offset.toBottom;
                             tipY = 'top';
                             translateY = '0';
 
                         }
 
                         if (h == 'right') {
-                            left = dimensions.left + dimensions.width;
+                            left = dims.target.offset.toRight;
                             translateX = '-100%';
                         } else if (h == 'center') {
-                            left = dimensions.left + dimensions.width / 2;
+                            left = dims.target.offset.left + dims.target.width / 2;
                             translateX = '-50%';
                         } else {
-                            left = dimensions.left;
+                            left = dims.target.offset.left;
                             translateX = '0';
                         }
 
-                        wrap.css({
+                        els.wrap.css({
                             left: left + 'px',
                             top: top + 'px',
                             transform: 'translate(' + translateX + ',' + translateY + ')',
                         });
 
-                        tip.attr('class', tipY + ' ' + h);
+                        els.tip.attr('class', 'vertical ' + tipY + ' ' + h);
 
                     }
 
-                    function placeHorizontally(h, v) {
+                    function placeHorizontally(h, v, fixed) {
 
                         var top;
                         var left;
@@ -595,33 +907,36 @@
                         var tipX;
 
                         if (h == 'right') {
-                            left = dimensions.left + dimensions.width + margin;
+                            left = dims.target.margins.offset.toRight;
                             tipX = 'left';
                             translateX = '0';
                         } else {
-                            left = dimensions.left - margin;
+                            left = dims.target.margins.offset.left;
                             tipX = 'right';
                             translateX = '-100%';
                         }
 
-                        if (v == 'top') {
-                            top = dimensions.top;
+                        if (fixed) {
+                            top = dims.window.height / 2;
+                            translateY = '-50%';
+                        } else if (v == 'top') {
+                            top = dims.target.offset.top;
                             translateY = '0';
                         } else if (v == 'center') {
-                            top = dimensions.top + dimensions.height / 2;
+                            top = dims.target.offset.top + dims.target.height / 2;
                             translateY = '-50%';
                         } else {
-                            top = dimensions.top + dimensions.height;
+                            top = dims.target.offset.toBottom;
                             translateY = '-100%';
                         }
 
-                        wrap.css({
+                        els.wrap.css({
                             left: left + 'px',
                             top: top + 'px',
                             transform: 'translate(' + translateX + ',' + translateY + ')',
                         });
 
-                        tip.attr('class', 'side ' + tipX + ' ' + v);
+                        els.tip.attr('class', 'horizontal ' + tipX + ' ' + v);
 
                     }
 
@@ -633,60 +948,62 @@
                         var translateX;
 
                         if (v == 'top') {
-                            top = dimensions.top + margin;
+                            top = dims.target.margins.offset.top < dims.scroll.offset.top ? margin : dims.target.offset.top;
                             translateY = '0';
                         } else {
-                            top = dimensions.top + dimensions.height - margin - (dimensions.bottom < 0 ? -dimensions.bottom : 0);
+                            top = dims.target.margins.offset.toBottom > dims.scroll.offset.toBottom ? dims.scroll.offset.toBottom - margin : dims.target.offset.toBottom;
                             translateY = '-100%';
                         }
 
                         if (h == 'right') {
-                            left = dimensions.left + dimensions.width - margin;
+                            left = dims.target.offset.left + dims.target.width;
                             translateX = '-100%';
                         } else if (h == 'center') {
-                            left = dimensions.left + dimensions.width / 2;
+                            left = dims.target.offset.left + dims.target.width / 2;
                             translateX = '-50%';
                         } else {
-                            left = dimensions.left + margin;
+                            left = dims.target.offset.left;
                             translateX = '0';
                         }
 
-                        wrap.css({
+                        els.wrap.css({
                             left: left + 'px',
                             top: top + 'px',
                             transform: 'translate(' + translateX + ',' + translateY + ')',
                         });
 
-                        tip.attr('class', 'hidden');
+                        els.tip.attr('class', 'hidden');
                     }
 
                     function placeCentered() {
-                        wrap.css({
+                        els.wrap.css({
                             left: '50%',
                             top: '50%',
                             transform: 'translate(-50%, -50%)',
                             margin: '0'
                         });
-                        tip.attr('class', 'hidden');
+                        els.tip.attr('class', 'hidden');
 
                     }
                 }
 
-                function moveMasks(dimensions) {
+                function moveMasks() {
 
-                    if (!dimensions) {
-                        masks.top.css({
+                    var d = $q.defer();
+
+                    if (!els.target) {
+                        els.masks_top.css({
                             height: '0px'
                         });
-                        masks.bottom.css({
+                        els.masks_bottom.css({
                             height: '0px'
                         });
-                        masks.left.css({
+                        els.masks_left.css({
                             top: '0px',
                             height: '100%',
                             width: '0px'
                         });
-                        masks.right.css({
+                        els.masks_right.css({
                             top: '0px',
                             height: '100%',
                             width: '0px'
@@ -694,26 +1011,32 @@
                         return;
                     }
 
-                    masks.top.css({
-                        height: dimensions.top + 'px'
+                    els.masks_top.css({
+                        height: dims.target.offset.top + 'px',
+                        top: dims.target.offset.top < 0 ? dims.target.offset.top + 'px' : 0
                     });
-                    masks.bottom.css({
-                        height: dimensions.bottom + 'px'
+                    els.masks_bottom.css({
+                        height: dims.target.offset.fromBottom + 'px',
+                        bottom: dims.target.offset.fromBottom < 0 ? dims.target.offset.fromBottom + 'px' : 0
                     });
-                    masks.left.css({
-                        top: dimensions.top + 'px',
-                        height: dimensions.height + 'px',
-                        width: dimensions.left + 'px'
+                    els.masks_left.css({
+                        top: dims.target.offset.top + 'px',
+                        height: dims.target.height + 'px',
+                        width: dims.target.offset.left + 'px'
                     });
-                    masks.right.css({
-                        top: dimensions.top + 'px',
-                        height: dimensions.height + 'px',
-                        width: dimensions.right + 'px'
+                    els.masks_right.css({
+                        top: dims.target.offset.top + 'px',
+                        height: dims.target.height + 'px',
+                        width: dims.target.offset.fromRight + 'px'
                     });
+
+                    d.resolve();
+
+                    return d.promise;
                 }
             }
         };
-    });
+    }]);
 
     window.angular.extendDeep = function extendDeep(dst) {
         angular.forEach(arguments, function(obj) {
@@ -729,6 +1052,87 @@
         });
         return dst;
     };
+
+    if (window.addWheelListener) {
+        return;
+    }
+
+    var prefix = "",
+        _addEventListener, onwheel, support;
+
+    // detect event model
+    if (window.addEventListener) {
+        _addEventListener = "addEventListener";
+        _removeEventListener = "removeEventListener";
+    } else {
+        _addEventListener = "attachEvent";
+        _removeEventListener = "detachEvent";
+        prefix = "on";
+    }
+
+    // detect available wheel event
+    support = "onwheel" in document.createElement("div") ? "wheel" : // Modern browsers support "wheel"
+        document.onmousewheel !== undefined ? "mousewheel" : // Webkit and IE support at least "mousewheel"
+        "DOMMouseScroll"; // let's assume that remaining browsers are older Firefox
+
+    window.addWheelListener = function(elem, callback, useCapture) {
+        _addWheelListener(elem, support, callback, useCapture);
+
+        // handle MozMousePixelScroll in older Firefox
+        if (support == "DOMMouseScroll") {
+            _addWheelListener(elem, "MozMousePixelScroll", callback, useCapture);
+        }
+    };
+
+    window.removeWheelListener = function(elem, callback, useCapture) {
+        _removeWheelListener(elem, support, callback, useCapture);
+
+        // handle MozMousePixelScroll in older Firefox
+        if (support == "DOMMouseScroll") {
+            _removeWheelListener(elem, "MozMousePixelScroll", callback, useCapture);
+        }
+    };
+
+    function _removeWheelListener(elem, eventName, callback, useCapture) {
+        elem[_removeEventListener](prefix + eventName, support == "wheel" ? callback : original, useCapture || false);
+    }
+
+    function _addWheelListener(elem, eventName, callback, useCapture) {
+        elem[_addEventListener](prefix + eventName, support == "wheel" ? callback : original, useCapture || false);
+    }
+
+    function original(originalEvent) {
+        !originalEvent && (originalEvent = window.event);
+
+        // create a normalized event object
+        var event = {
+            // keep a ref to the original event object
+            originalEvent: originalEvent,
+            target: originalEvent.target || originalEvent.srcElement,
+            type: "wheel",
+            deltaMode: originalEvent.type == "MozMousePixelScroll" ? 0 : 1,
+            deltaX: 0,
+            deltaZ: 0,
+            preventDefault: function() {
+                originalEvent.preventDefault ?
+                    originalEvent.preventDefault() :
+                    originalEvent.returnValue = false;
+            }
+        };
+
+        // calculate deltaY (and deltaX) according to the event
+        if (support == "mousewheel") {
+            event.deltaY = -1 / 40 * originalEvent.wheelDelta;
+            // Webkit also support wheelDeltaX
+            originalEvent.wheelDeltaX && (event.deltaX = -1 / 40 * originalEvent.wheelDeltaX);
+        } else {
+            event.deltaY = originalEvent.detail;
+        }
+
+        // it's time to fire the callback
+        return callback(event);
+    }
+
 
 })();
 
