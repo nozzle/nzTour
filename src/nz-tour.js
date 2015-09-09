@@ -481,7 +481,7 @@
                     if (up && !scrollTop) {
                         return prevent(e);
                     }
-                    if (!up && (innerContent.height() - content.height() == scrollTop)) {
+                    if (!up && (els.innerContent.height() - els.content.height() == scrollTop)) {
                         return prevent(e);
                     }
                 }
