@@ -141,7 +141,7 @@
                     }
                 }
                 return true;
-            }
+            };
 
             if (!validPriorities(tour.config.placementPriority)) {
                 tour.config.placementPriority = service.config.placementPriority;
@@ -586,7 +586,7 @@
                     };
 
 
-                    // Scrollbox 
+                    // Scrollbox
 
                     dims.scroll = {
                         width: els.scroll.outerWidth(),
