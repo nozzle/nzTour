@@ -115,7 +115,7 @@
             if (i > 0 && i <= service.current.tour.steps.length) {
                 return doAfter()
                     .then(function() {
-                        service.current.step = i;
+                        service.current.step = i - 1;
                     })
                     .then(doStep);
             }
