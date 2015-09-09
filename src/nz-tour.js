@@ -22,7 +22,8 @@
                 nextText: 'Next',
                 finishText: 'Finish',
                 animationDuration: 400,
-                placementPriority: ['bottom', 'right', 'top', 'left']
+                placementPriority: ['bottom', 'right', 'top', 'left'],
+                disableHotkeys: false
             },
             current: false,
             body: angular.element('body'),
@@ -373,16 +374,18 @@
                 var stopScrollingDebounced = $scope.debounce(stopScrolling, 100);
 
                 // Key Bindings
-                els.window.bind('keydown', keyDown);
-                // window scroll, resize bindings
-                els.window.bind('resize scroll', onWindowScrollDebounced);
-                window.addWheelListener(window, onWindowScrollDebounced);
-                // content scroll bindings
-                els.content.bind('scroll', onBoxScroll);
-                window.addWheelListener(els.content[0], onBoxScroll);
-                // mask scroll bindings
-                if (config.mask.scrollThrough === false) {
-                    window.addWheelListener(els.masks_wrap, stopMaskScroll);
+                if(config.disableHotkeys == false) {
+                    els.window.bind('keydown', keyDown);
+                    // window scroll, resize bindings
+                    els.window.bind('resize scroll', onWindowScrollDebounced);
+                    window.addWheelListener(window, onWindowScrollDebounced);
+                    // content scroll bindings
+                    els.content.bind('scroll', onBoxScroll);
+                    window.addWheelListener(els.content[0], onBoxScroll);
+                    // mask scroll bindings
+                    if (config.mask.scrollThrough === false) {
+                        window.addWheelListener(els.masks_wrap, stopMaskScroll);
+                    }
                 }
 
                 // Event Cleanup
