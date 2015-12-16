@@ -301,7 +301,8 @@
                     maxHeight = 120,
                     maxWidth = 250,
                     scrolling = false,
-                    maskTransitions = true;
+                    maskTransitions = true,
+                    currentStep = null;
 
                 var els = {
                     window: angular.element(window),
@@ -379,12 +380,6 @@
                     els = {};
                     el.remove();
                 };
-
-                window.tanner = $scope;
-
-
-
-
 
                 // Events
 
@@ -481,7 +476,7 @@
                     toggleMaskTransitions(false);
                     stopScrollingDebounced();
 
-                    findTarget()
+                    findTarget(currentStep)
                         .then(getDimensions)
                         .then(scrollToTarget)
                         .then(getDimensions)
@@ -494,10 +489,9 @@
                 }
 
                 function updateStep(e, step) {
-
                     els.target = false;
                     var steps = $scope.current.tour.steps;
-
+                    currentStep = step;
                     $scope.view = {
                         step: step,
                         length: steps.length,
