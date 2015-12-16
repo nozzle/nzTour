@@ -49,10 +49,10 @@
         // API
         function start(tour) {
             if (!tour) {
-                throw 'No Tour Specified!';
+                $q.reject('No Tour Specified!');
             }
             if (!tour.steps.length) {
-                throw 'No steps were found in that tour!';
+                $q.reject('No steps were found in that tour!');
             }
             if (service.current) {
                 return stop()
