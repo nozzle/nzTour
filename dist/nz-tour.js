@@ -46,10 +46,7 @@
 
         return service;
 
-
-
         // API
-
         function start(tour) {
             if (!tour) {
                 throw 'No Tour Specified!';
@@ -82,7 +79,6 @@
             if (service.current) {
                 hide();
             }
-            return;
         }
 
         function next() {
@@ -123,12 +119,7 @@
             return d.promise;
         }
 
-
-
-
-
         // Internals
-
         function startTour(tour) {
 
             tour.config = angular.extendDeep({}, service.config, tour.config);
@@ -244,10 +235,6 @@
 
         }
 
-        function show() {
-
-        }
-
         function throttle(callback, limit) {
             var wait = false;
             return function() {
@@ -278,7 +265,7 @@
         }
     }]);
 
-    module.directive('nzTour', ["$q", "$timeout", "$window", function($q, $timeout, $window) {
+    module.directive('nzTour', ["$q", function($q) {
         return {
             template: [
                 '<div id="nzTour-box-wrap">',
@@ -301,9 +288,9 @@
                 '    <div class="mask right"></div>',
                 '    <div class="mask bottom"></div>',
                 '    <div class="mask left"></div>',
-                '</div>',
+                '</div>'
             ].join(' '),
-            link: function($scope, el, attrs) {
+            link: function($scope, el) {
 
                 // $scope is the actual nzTour service :)
 
@@ -311,8 +298,6 @@
                     target = false,
                     seeking = false,
                     margin = 15,
-                    vMargin = margin + 'px 0',
-                    hMargin = '0 ' + margin + 'px',
                     maxHeight = 120,
                     maxWidth = 250,
                     scrolling = false,
@@ -336,16 +321,14 @@
                     masks_bottom: el.find('.nzTour-masks .bottom'),
                     masks_left: el.find('.nzTour-masks .left'),
                     scroll: angular.element(config.scrollBox),
-                    target: false,
+                    target: false
                 };
 
                 var dims = {
                     window: {},
                     scroll: {},
-                    target: {},
+                    target: {}
                 };
-
-
 
                 // Turn on Transitions
                 toggleMaskTransitions(true);
@@ -585,7 +568,7 @@
 
                     dims.window = {
                         width: els.window.width(),
-                        height: els.window.height(),
+                        height: els.window.height()
                     };
 
 
@@ -597,7 +580,7 @@
                         offset: els.scroll.offset(),
                         scroll: {
                             top: els.scroll.scrollTop(),
-                            left: els.scroll.scrollLeft(),
+                            left: els.scroll.scrollLeft()
                         }
                     };
 
@@ -619,7 +602,7 @@
                     dims.target = {
                         width: els.target.outerWidth(),
                         height: els.target.outerHeight(),
-                        offset: els.target.offset(),
+                        offset: els.target.offset()
                     };
 
                     // For an html/body scrollbox
@@ -646,7 +629,7 @@
                             toBottom: dims.target.offset.toBottom + margin,
                             toRight: dims.target.offset.toRight + margin,
                             fromBottom: dims.target.offset.fromBottom - margin,
-                            fromRight: dims.target.offset.fromRight - margin,
+                            fromRight: dims.target.offset.fromRight - margin
                         },
                         height: dims.target.height + margin * 2,
                         right: dims.target.offset.fromRight + margin * 2
@@ -898,7 +881,7 @@
                         els.wrap.css({
                             left: left + 'px',
                             top: top + 'px',
-                            transform: 'translate(' + translateX + ',' + translateY + ')',
+                            transform: 'translate(' + translateX + ',' + translateY + ')'
                         });
 
                         els.tip.attr('class', 'vertical ' + tipY + ' ' + h);
@@ -940,7 +923,7 @@
                         els.wrap.css({
                             left: left + 'px',
                             top: top + 'px',
-                            transform: 'translate(' + translateX + ',' + translateY + ')',
+                            transform: 'translate(' + translateX + ',' + translateY + ')'
                         });
 
                         els.tip.attr('class', 'horizontal ' + tipX + ' ' + v);
@@ -976,7 +959,7 @@
                         els.wrap.css({
                             left: left + 'px',
                             top: top + 'px',
-                            transform: 'translate(' + translateX + ',' + translateY + ')',
+                            transform: 'translate(' + translateX + ',' + translateY + ')'
                         });
 
                         els.tip.attr('class', 'hidden');
