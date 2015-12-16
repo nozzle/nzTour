@@ -278,16 +278,16 @@
                 '           <div id="nzTour-inner-content"></div>',
                 '        </div>',
                 '        <div id="nzTour-actions">',
-                '            <button id="nzTour-previous" ng-show="view.step > 0" ng-click="previous()" class="ng-hide">{{view.previousText}}</button>',
-                '            <button id="nzTour-next" ng-show="view.step >= 0" ng-click="next()" class="success" class="ng-hide">{{view.nextText}}</button>',
+                '            <button id="nzTour-previous" ng-show="view.step > 0" ng-click="previous()">{{view.previousText}}</button>',
+                '            <button id="nzTour-next" ng-show="view.step >= 0" ng-click="next()" class="success">{{view.nextText}}</button>',
                 '        </div>',
                 '    </div>',
                 '</div>',
                 '<div class="nzTour-masks" ng-show="current.tour.config.mask.visible" ng-click="tryStop()">',
-                '    <div class="mask top"></div>',
-                '    <div class="mask right"></div>',
-                '    <div class="mask bottom"></div>',
-                '    <div class="mask left"></div>',
+                '    <div class="mask top" ng-style="{\'background-color\': current.tour.config.mask.color}"></div>',
+                '    <div class="mask right" ng-style="{\'background-color\': current.tour.config.mask.color}"></div>',
+                '    <div class="mask bottom" ng-style="{\'background-color\': current.tour.config.mask.color}"></div>',
+                '    <div class="mask left" ng-style="{\'background-color\': current.tour.config.mask.color}"></div>',
                 '</div>'
             ].join(' '),
             link: function($scope, el) {
@@ -342,13 +342,6 @@
                     els.box.addClass('dark-box');
                     margin = 7;
                 }
-
-                // Mask Background Color
-                els.masks_top.add(els.masks_right).add(els.masks_bottom).add(els.masks_left).css({
-                    'background-color': config.mask.color
-                });
-
-
 
                 // Step Update Listener
                 var stepUpdater = $scope.$on('step', updateStep);
