@@ -384,7 +384,7 @@
                     window.addWheelListener(els.content[0], onBoxScroll);
                     // mask scroll bindings
                     if (config.mask.scrollThrough === false) {
-                        window.addWheelListener(els.masks_wrap, stopMaskScroll);
+                        window.addWheelListener(els.masks_wrap[0], stopMaskScroll);
                     }
                 }
 

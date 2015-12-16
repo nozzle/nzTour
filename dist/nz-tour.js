@@ -22,7 +22,8 @@
                 nextText: 'Next',
                 finishText: 'Finish',
                 animationDuration: 400,
-                placementPriority: ['bottom', 'right', 'top', 'left']
+                placementPriority: ['bottom', 'right', 'top', 'left'],
+                disableHotkeys: false
             },
             current: false,
             body: angular.element('body'),
@@ -114,7 +115,7 @@
             if (i > 0 && i <= service.current.tour.steps.length) {
                 return doAfter()
                     .then(function() {
-                        service.current.step = i;
+                        service.current.step = i - 1;
                     })
                     .then(doStep);
             }
@@ -141,7 +142,7 @@
                     }
                 }
                 return true;
-            }
+            };
 
             if (!validPriorities(tour.config.placementPriority)) {
                 tour.config.placementPriority = service.config.placementPriority;
@@ -373,16 +374,18 @@
                 var stopScrollingDebounced = $scope.debounce(stopScrolling, 100);
 
                 // Key Bindings
-                els.window.bind('keydown', keyDown);
-                // window scroll, resize bindings
-                els.window.bind('resize scroll', onWindowScrollDebounced);
-                window.addWheelListener(window, onWindowScrollDebounced);
-                // content scroll bindings
-                els.content.bind('scroll', onBoxScroll);
-                window.addWheelListener(els.content[0], onBoxScroll);
-                // mask scroll bindings
-                if (config.mask.scrollThrough === false) {
-                    window.addWheelListener(els.masks_wrap, stopMaskScroll);
+                if(config.disableHotkeys == false) {
+                    els.window.bind('keydown', keyDown);
+                    // window scroll, resize bindings
+                    els.window.bind('resize scroll', onWindowScrollDebounced);
+                    window.addWheelListener(window, onWindowScrollDebounced);
+                    // content scroll bindings
+                    els.content.bind('scroll', onBoxScroll);
+                    window.addWheelListener(els.content[0], onBoxScroll);
+                    // mask scroll bindings
+                    if (config.mask.scrollThrough === false) {
+                        window.addWheelListener(els.masks_wrap[0], stopMaskScroll);
+                    }
                 }
 
                 // Event Cleanup
@@ -481,7 +484,7 @@
                     if (up && !scrollTop) {
                         return prevent(e);
                     }
-                    if (!up && (innerContent.height() - content.height() == scrollTop)) {
+                    if (!up && (els.innerContent.height() - els.content.height() == scrollTop)) {
                         return prevent(e);
                     }
                 }
@@ -586,7 +589,7 @@
                     };
 
 
-                    // Scrollbox 
+                    // Scrollbox
 
                     dims.scroll = {
                         width: els.scroll.outerWidth(),
