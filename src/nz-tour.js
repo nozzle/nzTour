@@ -122,7 +122,7 @@
         // Internals
         function startTour(tour) {
 
-            tour.config = angular.extendDeep({}, service.config, tour.config);
+            tour.config = extendDeep({}, service.config, tour.config);
 
             // Check for valid priorities
             var validPriorities = function (priorities) {
@@ -522,15 +522,7 @@
                         });
                 }
 
-
-
-
-
-
-
-
                 // Internal Functions
-
                 function findTarget(step) {
                     var d = $q.defer();
 
@@ -1021,7 +1013,7 @@
         };
     });
 
-    window.angular.extendDeep = function extendDeep(dst) {
+    function extendDeep(dst) {
         angular.forEach(arguments, function(obj) {
             if (obj !== dst) {
                 angular.forEach(obj, function(value, key) {
