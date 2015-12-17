@@ -65,7 +65,7 @@
         }
 
         function stop() {
-            return doAfter()
+            return doAfter(0)
                 .then(function() {
                     return toggleElements(false);
                 })
@@ -87,31 +87,33 @@
                 service.current.reject();
             }
 
-            return doAfter()
+            return doAfter(1)
                 .then(checkHasNext)
                 .then(function() {
                     service.current.step++;
+                    return 1;
                 })
                 .then(doStep);
         }
 
         function previous() {
-            return doAfter()
+            return doAfter(-1)
                 .then(function() {
                     if (service.current.step > 0) {
                         service.current.step--;
-                        return true;
+                        return -1;
                     }
-                    return $q.reject();
+                    return $q.reject(null);
                 })
                 .then(doStep);
         }
 
         function gotoStep(i) {
             if (i > 0 && i <= service.current.tour.steps.length) {
-                return doAfter()
+                return doAfter(0)
                     .then(function() {
                         service.current.step = i - 1;
+                        return 0;
                     })
                     .then(doStep);
             }
@@ -171,14 +173,14 @@
             return $q.when(null);
         }
 
-        function doStep() {
-            return doBefore()
+        function doStep(direction) {
+            return doBefore(direction)
                 .then(broadcastStep);
         }
 
-        function doBefore() {
+        function doBefore(direction) {
             if (service.current.tour.steps[service.current.step].before) {
-                return service.current.tour.steps[service.current.step].before();
+                return service.current.tour.steps[service.current.step].before(direction);
             }
             return $q.when(null);
         }
@@ -188,9 +190,9 @@
             return $q.when(null);
         }
 
-        function doAfter() {
+        function doAfter(direction) {
             if (service.current.tour.steps[service.current.step].after) {
-                return service.current.tour.steps[service.current.step].after();
+                return service.current.tour.steps[service.current.step].after(direction);
             }
             return $q.when(null);
         }

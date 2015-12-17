@@ -129,7 +129,14 @@ var tour = {
     }, {
         target: '.some .other .element',
         content: 'Blah blah blah.',
-        before: function(){
+        before: function(direction){
+            if(direction === -1)
+                console.log('coming from next step');
+            else if (direction === 1)
+                console.log('coming from previous step');
+            else
+                console.log('started at this step');
+
         	var d = $q.defer();
         	// Do something amazing
         	d.resolve(); // or d.reject()
@@ -138,7 +145,7 @@ var tour = {
     }, {
         target: '#menu-element',
         content: 'I guess this is a menu!',
-        after: function(){
+        after: function(direction){
         	var d = $q.defer();
         	// Do some more cool stuff
         	d.resolve(); // or d.reject()
