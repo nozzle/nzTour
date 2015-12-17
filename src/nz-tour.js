@@ -107,7 +107,6 @@
         }
 
         function gotoStep(i) {
-            var d = $q.defer();
             if (i > 0 && i <= service.current.tour.steps.length) {
                 return doAfter()
                     .then(function() {
@@ -115,8 +114,7 @@
                     })
                     .then(doStep);
             }
-            d.reject();
-            return d.promise;
+            return $q.reject('Requested step not defined');
         }
 
         // Internals
@@ -159,22 +157,17 @@
         }
 
         function toggleElements(state, tour) {
-
-            var d = $q.defer();
-
             if (state) {
                 service.box = angular.element($compile('<nz-tour class="hidden"></nz-tour>')(service));
                 angular.element(service.body).append(service.box);
                 service.box.removeClass('hidden');
-                d.resolve();
             } else {
                 service.box.addClass('hidden');
-                $timeout(function() {
+                return $timeout(function() {
                     service.cleanup();
-                    d.resolve();
                 }, service.current.tour.config.animationDuration);
             }
-            return d.promise;
+            return $q.when(null);
         }
 
         function doStep() {
@@ -183,53 +176,42 @@
         }
 
         function doBefore() {
-            var d = $q.defer();
             if (service.current.tour.steps[service.current.step].before) {
                 return service.current.tour.steps[service.current.step].before();
             }
-            d.resolve();
-            return d.promise;
+            return $q.when(null);
         }
 
         function broadcastStep() {
-            var d = $q.defer();
             service.$broadcast('step', service.current.step);
-            d.resolve();
-            return d.promise;
+            return $q.when(null);
         }
 
-
-
         function doAfter() {
-            var d = $q.defer();
             if (service.current.tour.steps[service.current.step].after) {
                 return service.current.tour.steps[service.current.step].after();
             }
-            d.resolve();
-            return d.promise;
+            return $q.when(null);
         }
 
         function checkHasNext() {
-            var d = $q.defer();
-            if (service.current.step == service.current.tour.steps.length - 1) {
-                finish();
-                d.reject();
+            if (service.current.step === service.current.tour.steps.length - 1) {
+                return finish()
+                    .then(function(){
+                        return $q.reject('No more steps left');
+                    });
             }
-            d.resolve();
-            return d.promise;
+            return $q.when(null);
         }
 
-
-
         function finish() {
-            toggleElements(false)
+            return toggleElements(false)
                 .then(function() {
                     service.current.promise.resolve();
                     service.current = false;
                     return true;
                 });
         }
-
 
         function hide() {
 
@@ -451,7 +433,6 @@
                     var up = delta > 0;
                     var scrollTop = els.content.scrollTop();
 
-
                     if (up && !scrollTop) {
                         return prevent(e);
                     }
@@ -536,23 +517,17 @@
 
                 function getDimensions() {
 
-                    var d = $q.defer();
-
                     if (!els.target) {
-                        d.resolve();
-                        return d.promise;
+                        return $q.when(null);
                     }
 
                     // Window
-
                     dims.window = {
                         width: els.window.width(),
                         height: els.window.height()
                     };
 
-
                     // Scrollbox
-
                     dims.scroll = {
                         width: els.scroll.outerWidth(),
                         height: els.scroll.outerHeight(),
@@ -575,9 +550,7 @@
                     dims.scroll.offset.fromBottom = dims.window.height - dims.scroll.offset.top - dims.scroll.height;
                     dims.scroll.offset.fromRight = dims.window.width - dims.scroll.offset.left - dims.scroll.width;
 
-
                     // Target
-
                     dims.target = {
                         width: els.target.outerWidth(),
                         height: els.target.outerHeight(),
@@ -614,22 +587,16 @@
                         right: dims.target.offset.fromRight + margin * 2
                     };
 
-                    d.resolve();
-
-                    return d.promise;
+                    return $q.when(null);
                 }
 
                 function scrollToTarget() {
-                    var d = $q.defer();
-
                     if (!els.target) {
-                        d.resolve();
-                        return d.promise;
+                        return $q.when(null);
                     }
 
                     var newScrollTop = findScrollTop();
-
-
+                    var d = $q.defer();
                     if (!newScrollTop) {
                         d.resolve();
                     } else {
@@ -643,7 +610,6 @@
 
                     return d.promise;
                 }
-
 
                 function findScrollTop() {
                     // Is element to large to fit?
@@ -674,7 +640,6 @@
                 }
 
                 function moveToTarget() {
-
                     return $q.all([
                         moveBox(),
                         moveMasks()
@@ -682,10 +647,7 @@
                 }
 
                 function moveBox() {
-
                     var step = $scope.current.tour.steps[$scope.current.step];
-
-                    var d = $q.defer();
 
                     // Default Position?
                     if (!els.target) {
@@ -704,21 +666,16 @@
                     angular.forEach((step.placementPriority || config.placementPriority), function(priority) {
                         if (!placed && placementOptions[priority]()) {
                             placed = true;
-                            d.resolve();
                         }
                     });
 
                     if (!placed) {
                         placeInside('bottom', 'center');
-                        d.resolve();
-                        return;
                     }
 
-                    return d.promise;
-
+                    return $q.when(null);
 
                     // Placement Priorities
-
                     function bottom() {
                         // Can Below?
                         if (dims.target.margins.offset.fromBottom > maxHeight) {
@@ -742,7 +699,6 @@
                     function right() {
                         // Can Right?
                         if (dims.target.margins.offset.fromRight > maxWidth) {
-
                             // Is Element to Large to fit?
                             if (dims.target.margins.height > dims.scroll.height) {
 
@@ -820,15 +776,8 @@
                         return false;
                     }
 
-
-
-
-
-
                     // Placement functions
-
                     function placeVertically(v, h) {
-
                         var top;
                         var left;
                         var translateX;
@@ -843,7 +792,6 @@
                             top = dims.target.margins.offset.toBottom;
                             tipY = 'top';
                             translateY = '0';
-
                         }
 
                         if (h == 'right') {
@@ -864,11 +812,9 @@
                         });
 
                         els.tip.attr('class', 'vertical ' + tipY + ' ' + h);
-
                     }
 
                     function placeHorizontally(h, v, fixed) {
-
                         var top;
                         var left;
                         var translateX;
@@ -910,7 +856,6 @@
                     }
 
                     function placeInside(v, h) {
-
                         var top;
                         var left;
                         var translateY;
@@ -957,9 +902,6 @@
                 }
 
                 function moveMasks() {
-
-                    var d = $q.defer();
-
                     if (!els.target) {
                         els.masks_top.css({
                             height: '0px'
@@ -999,9 +941,7 @@
                         width: dims.target.offset.fromRight + 'px'
                     });
 
-                    d.resolve();
-
-                    return d.promise;
+                    return $q.when(null);
                 }
             }
         };
@@ -1026,7 +966,7 @@
         return;
     }
 
-    var prefix = "",
+    var prefix = '',
         _addEventListener, onwheel, support;
 
     // detect event model
@@ -1101,10 +1041,4 @@
         // it's time to fire the callback
         return callback(event);
     }
-
-
 })();
-
-
-
-//
