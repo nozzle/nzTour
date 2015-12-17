@@ -11,6 +11,7 @@
             config: {
                 mask: {
                     visible: true,
+                    visibleOnNoTarget: false,
                     clickThrough: false,
                     clickExit: false,
                     scrollThrough: true,
@@ -904,7 +905,7 @@
                 function moveMasks() {
                     if (!els.target) {
                         els.masks_top.css({
-                            height: '0px'
+                            height: config.mask.visibleOnNoTarget ? '100%' : '0px'
                         });
                         els.masks_bottom.css({
                             height: '0px'

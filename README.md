@@ -59,6 +59,7 @@ var tour = {
 	config: {
         mask: {
             visible: true, // Shows the element mask
+            visibleOnNoTarget: false, // Shows a full page mask if no target element has been specified
             clickThrough: false, // Allows the user to interact with elements beneath the mask
             clickExit: false, // Exit the tour when the user clicks on the mask
             scrollThrough: true // Allows the user to scroll the scrollbox or window through the mask
