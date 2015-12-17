@@ -919,7 +919,7 @@
                             height: '100%',
                             width: '0px'
                         });
-                        return;
+                        return $q.when(null);
                     }
 
                     els.masks_top.css({
