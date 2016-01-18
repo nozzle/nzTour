@@ -273,6 +273,7 @@
                 '    <div class="mask right" ng-style="{\'background-color\': current.tour.config.mask.color}"></div>',
                 '    <div class="mask bottom" ng-style="{\'background-color\': current.tour.config.mask.color}"></div>',
                 '    <div class="mask left" ng-style="{\'background-color\': current.tour.config.mask.color}"></div>',
+                '    <div class="mask center"></div>',
                 '</div>'
             ].join(' '),
             link: function($scope, el) {
@@ -306,6 +307,7 @@
                     masks_right: el.find('.nzTour-masks .right'),
                     masks_bottom: el.find('.nzTour-masks .bottom'),
                     masks_left: el.find('.nzTour-masks .left'),
+                    masks_center: el.find('.nzTour-masks .center'),
                     scroll: angular.element(config.scrollBox),
                     target: false
                 };
@@ -389,9 +391,11 @@
                             prevent(e);
                             return;
                         case 27:
-                            $scope.stop();
-                            prevent(e);
-                            return;
+                            if (!config.disableEscExit) {
+                                $scope.stop();
+                                prevent(e);
+                                return;
+                            }
                         case 38:
                         case 40:
                             onWindowScrollDebounced();
@@ -925,24 +929,37 @@
                         return $q.when(null);
                     }
 
+                    var margin = config.highlightMargin ? config.highlightMargin : 0;
+                    
                     els.masks_top.css({
-                        height: dims.target.offset.top + 'px',
+                        height: dims.target.offset.top - margin + 'px',
                         top: dims.target.offset.top < 0 ? dims.target.offset.top + 'px' : 0
                     });
                     els.masks_bottom.css({
-                        height: dims.target.offset.fromBottom + 'px',
+                        height: dims.target.offset.fromBottom - margin + 'px',
                         bottom: dims.target.offset.fromBottom < 0 ? dims.target.offset.fromBottom + 'px' : 0
                     });
                     els.masks_left.css({
-                        top: dims.target.offset.top + 'px',
-                        height: dims.target.height + 'px',
-                        width: dims.target.offset.left + 'px'
+                        top: dims.target.offset.top - margin + 'px',
+                        height: dims.target.height + 2*margin + 'px',
+                        width: dims.target.offset.left - margin + 'px'
                     });
                     els.masks_right.css({
-                        top: dims.target.offset.top + 'px',
-                        height: dims.target.height + 'px',
-                        width: dims.target.offset.fromRight + 'px'
+                        top: dims.target.offset.top - margin + 'px',
+                        height: dims.target.height + 2*margin + 'px',
+                        width: dims.target.offset.fromRight - margin + 'px'
                     });
+
+                    if (config.disableInteraction) {
+                        els.masks_center.css({
+                            height: dims.target.height + 2*margin + 'px',
+                            top: dims.target.offset.top - margin + 'px',
+                            left: dims.target.offset.left - margin + 'px',
+                            right: dims.target.offset.fromRight - margin + 'px',
+                            backgroundColor: 'transparent'
+                        });    
+                    }
+                    
 
                     return $q.when(null);
                 }

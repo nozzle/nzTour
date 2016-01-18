@@ -71,7 +71,10 @@ var tour = {
         finishText: 'Finish',
         animationDuration: 400, // Animation Duration for the box and mask
         placementPriority: ['bottom', 'right', 'top','left'],
-        dark: false // Dark mode (Works great with `mask.visible = false`)
+        dark: false, // Dark mode (Works great with `mask.visible = false`)
+        disableInteraction: false, // Disable interaction with the highlighted elements
+        highlightMargin: 0, // Margin of the highglighted area
+        disableEscExit: false // Disable end of tour when pressing ESC
     },
 	steps: []
 }
