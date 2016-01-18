@@ -391,9 +391,11 @@
                             prevent(e);
                             return;
                         case 27:
-                            $scope.stop();
-                            prevent(e);
-                            return;
+                            if (!config.disableEscExit) {
+                                $scope.stop();
+                                prevent(e);
+                                return;
+                            }
                         case 38:
                         case 40:
                             onWindowScrollDebounced();
