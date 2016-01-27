@@ -265,7 +265,7 @@
                 '           <div id="nzTour-inner-content"></div>',
                 '        </div>',
                 '        <div id="nzTour-actions">',
-                '            <button id="nzTour-previous" ng-show="view.step > 0 && view.showPrevious" ng-click="previous()"> ng-click="previous()">{{view.previousText}}</button>',
+                '            <button id="nzTour-previous" ng-show="view.step > 0 && view.showPrevious" ng-click="previous()">{{view.previousText}}</button>',
                 '            <button id="nzTour-next" ng-show="view.step >= 0 && view.showNext" ng-click="next()" class="success">{{view.nextText}}</button>',
                 '        </div>',
                 '    </div>',
