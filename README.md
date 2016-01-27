@@ -69,6 +69,8 @@ var tour = {
         previousText: 'Previous',
         nextText: 'Next',
         finishText: 'Finish',
+        showPrevious: true, // Setting to false hides the previous button
+        showNext: true // Setting to false hides the next button
         animationDuration: 400, // Animation Duration for the box and mask
         placementPriority: ['bottom', 'right', 'top','left'],
         dark: false, // Dark mode (Works great with `mask.visible = false`)
@@ -132,6 +134,7 @@ var tour = {
     }, {
         target: '.some .other .element',
         content: 'Blah blah blah.',
+        showPrevious: false,
         before: function(direction){
             if(direction === -1)
                 console.log('coming from next step');
