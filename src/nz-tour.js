@@ -24,7 +24,9 @@
                 finishText: 'Finish',
                 animationDuration: 400,
                 placementPriority: ['bottom', 'right', 'top', 'left'],
-                disableHotkeys: false
+                disableHotkeys: false,
+                showPrevious: true,
+                showNext: true
             },
             current: false,
             body: angular.element('body'),
@@ -263,8 +265,8 @@
                 '           <div id="nzTour-inner-content"></div>',
                 '        </div>',
                 '        <div id="nzTour-actions">',
-                '            <button id="nzTour-previous" ng-show="view.step > 0" ng-click="previous()">{{view.previousText}}</button>',
-                '            <button id="nzTour-next" ng-show="view.step >= 0" ng-click="next()" class="success">{{view.nextText}}</button>',
+                '            <button id="nzTour-previous" ng-show="view.step > 0 && view.showPrevious" ng-click="previous()">{{view.previousText}}</button>',
+                '            <button id="nzTour-next" ng-show="view.step >= 0 && view.showNext" ng-click="next()" class="success">{{view.nextText}}</button>',
                 '        </div>',
                 '    </div>',
                 '</div>',
@@ -484,7 +486,9 @@
                         step: step,
                         length: steps.length,
                         previousText: config.previousText,
-                        nextText: step == steps.length - 1 ? config.finishText : config.nextText
+                        nextText: step == steps.length - 1 ? config.finishText : config.nextText,
+                        showNext: steps[step].showNext === undefined ? config.showNext : steps[step].showNext,
+                        showPrevious: steps[step].showPrevious === undefined ? config.showPrevious : steps[step].showPrevious
                     };
                     //Don't mess around with angular sanitize for now. Add compile and sanitize later...
                     els.innerContent.html(steps[step].content);
