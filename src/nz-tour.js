@@ -156,9 +156,7 @@
             };
 
             toggleElements(true, tour);
-            doStep();
-
-            return service.current.promise.promise;
+            return doStep();
         }
 
         function toggleElements(state, tour) {
