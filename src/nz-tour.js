@@ -77,8 +77,9 @@
                     service.current = false;
                     if(func) {     
                         return func();
-                    } 
-                    return true;
+                    } else {
+                        return true;
+                    }
                 });
         }
 
@@ -219,8 +220,9 @@
                     service.current = false;
                     if(func) {     
                         return func();
-                    } 
-                    return true;
+                    } else {
+                        return true;
+                    }
                 });
         }
 

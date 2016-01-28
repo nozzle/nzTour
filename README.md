@@ -78,7 +78,7 @@ var tour = {
         highlightMargin: 0, // Margin of the highglighted area
         disableEscExit: false // Disable end of tour when pressing ESC,
         onClose: function() {} //Function called when the tour is closed
-        onComplete: function(){} //Function called when the tour is completed
+        onComplete: function() {} //Function called when the tour is completed
     },
 	steps: []
 }
