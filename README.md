@@ -76,7 +76,9 @@ var tour = {
         dark: false, // Dark mode (Works great with `mask.visible = false`)
         disableInteraction: false, // Disable interaction with the highlighted elements
         highlightMargin: 0, // Margin of the highglighted area
-        disableEscExit: false // Disable end of tour when pressing ESC
+        disableEscExit: false // Disable end of tour when pressing ESC,
+        onClose: function() {} //Function called when the tour is closed
+        onComplete: function() {} //Function called when the tour is completed
     },
 	steps: []
 }
