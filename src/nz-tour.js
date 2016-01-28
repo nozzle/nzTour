@@ -176,7 +176,6 @@
                     service.cleanup();
                 }, service.current.tour.config.animationDuration);
             }
-           // return $q.when(null);
         }
 
         function doStep(direction) {
