@@ -62,8 +62,9 @@
                     .then(function() {
                         return startTour(tour);
                     });
+            } else {
+                return startTour(tour);
             }
-            return startTour(tour);
         }
 
         function stop() {
@@ -72,8 +73,11 @@
                     return toggleElements(false);
                 })
                 .then(function() {
-                    service.current.promise.reject();
+                    var func = service.current.tour.config.onClose;
                     service.current = false;
+                    if(func) {     
+                        return func();
+                    } 
                     return true;
                 });
         }
@@ -164,13 +168,14 @@
                 service.box = angular.element($compile('<nz-tour class="hidden"></nz-tour>')(service));
                 angular.element(service.body).append(service.box);
                 service.box.removeClass('hidden');
+                return $q.when();
             } else {
                 service.box.addClass('hidden');
                 return $timeout(function() {
                     service.cleanup();
                 }, service.current.tour.config.animationDuration);
             }
-            return $q.when(null);
+           // return $q.when(null);
         }
 
         function doStep(direction) {
@@ -210,8 +215,11 @@
         function finish() {
             return toggleElements(false)
                 .then(function() {
-                    service.current.promise.resolve();
+                    var func = service.current.tour.config.onComplete;
                     service.current = false;
+                    if(func) {     
+                        return func();
+                    } 
                     return true;
                 });
         }
