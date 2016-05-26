@@ -59,6 +59,7 @@ var tour = {
 	config: {
         mask: {
             visible: true, // Shows the element mask
+            visibleOnNoTarget: false, // Shows a full page mask if no target element has been specified
             clickThrough: false, // Allows the user to interact with elements beneath the mask
             clickExit: false, // Exit the tour when the user clicks on the mask
             scrollThrough: true // Allows the user to scroll the scrollbox or window through the mask
@@ -68,9 +69,16 @@ var tour = {
         previousText: 'Previous',
         nextText: 'Next',
         finishText: 'Finish',
+        showPrevious: true, // Setting to false hides the previous button
+        showNext: true // Setting to false hides the next button
         animationDuration: 400, // Animation Duration for the box and mask
         placementPriority: ['bottom', 'right', 'top','left'],
-        dark: false // Dark mode (Works great with `mask.visible = false`)
+        dark: false, // Dark mode (Works great with `mask.visible = false`)
+        disableInteraction: false, // Disable interaction with the highlighted elements
+        highlightMargin: 0, // Margin of the highglighted area
+        disableEscExit: false // Disable end of tour when pressing ESC,
+        onClose: function() {} //Function called when the tour is closed
+        onComplete: function() {} //Function called when the tour is completed
     },
 	steps: []
 }
@@ -128,7 +136,15 @@ var tour = {
     }, {
         target: '.some .other .element',
         content: 'Blah blah blah.',
-        before: function(){
+        showPrevious: false,
+        before: function(direction){
+            if(direction === -1)
+                console.log('coming from next step');
+            else if (direction === 1)
+                console.log('coming from previous step');
+            else
+                console.log('started at this step');
+
         	var d = $q.defer();
         	// Do something amazing
         	d.resolve(); // or d.reject()
@@ -137,7 +153,7 @@ var tour = {
     }, {
         target: '#menu-element',
         content: 'I guess this is a menu!',
-        after: function(){
+        after: function(direction){
         	var d = $q.defer();
         	// Do some more cool stuff
         	d.resolve(); // or d.reject()

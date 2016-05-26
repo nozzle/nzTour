@@ -11,6 +11,7 @@
             config: {
                 mask: {
                     visible: true,
+                    visibleOnNoTarget: false,
                     clickThrough: false,
                     clickExit: false,
                     scrollThrough: true,
@@ -22,7 +23,10 @@
                 nextText: 'Next',
                 finishText: 'Finish',
                 animationDuration: 400,
-                placementPriority: ['bottom', 'right', 'top', 'left']
+                placementPriority: ['bottom', 'right', 'top', 'left'],
+                disableHotkeys: false,
+                showPrevious: true,
+                showNext: true
             },
             current: false,
             body: angular.element('body'),
@@ -45,34 +49,35 @@
 
         return service;
 
-
-
         // API
-
         function start(tour) {
             if (!tour) {
-                throw 'No Tour Specified!';
+                $q.reject('No Tour Specified!');
             }
             if (!tour.steps.length) {
-                throw 'No steps were found in that tour!';
+                $q.reject('No steps were found in that tour!');
             }
             if (service.current) {
                 return stop()
                     .then(function() {
                         return startTour(tour);
                     });
+            } else {
+                return startTour(tour);
             }
-            return startTour(tour);
         }
 
         function stop() {
-            return doAfter()
+            return doAfter(0)
                 .then(function() {
                     return toggleElements(false);
                 })
                 .then(function() {
-                    service.current.promise.reject();
+                    var func = service.current.tour.config.onClose;
                     service.current = false;
+                    if(func) {     
+                        return func();
+                    } 
                     return true;
                 });
         }
@@ -81,7 +86,6 @@
             if (service.current) {
                 hide();
             }
-            return;
         }
 
         function next() {
@@ -89,48 +93,43 @@
                 service.current.reject();
             }
 
-            return doAfter()
+            return doAfter(1)
                 .then(checkHasNext)
                 .then(function() {
                     service.current.step++;
+                    return 1;
                 })
                 .then(doStep);
         }
 
         function previous() {
-            return doAfter()
+            return doAfter(-1)
                 .then(function() {
                     if (service.current.step > 0) {
                         service.current.step--;
-                        return true;
+                        return -1;
                     }
-                    return $q.reject();
+                    return $q.reject(null);
                 })
                 .then(doStep);
         }
 
         function gotoStep(i) {
-            var d = $q.defer();
             if (i > 0 && i <= service.current.tour.steps.length) {
-                return doAfter()
+                return doAfter(0)
                     .then(function() {
-                        service.current.step = i;
+                        service.current.step = i - 1;
+                        return 0;
                     })
                     .then(doStep);
             }
-            d.reject();
-            return d.promise;
+            return $q.reject('Requested step not defined');
         }
 
-
-
-
-
         // Internals
-
         function startTour(tour) {
 
-            tour.config = angular.extendDeep({}, service.config, tour.config);
+            tour.config = extendDeep({}, service.config, tour.config);
 
             // Check for valid priorities
             var validPriorities = function (priorities) {
@@ -141,7 +140,7 @@
                     }
                 }
                 return true;
-            }
+            };
 
             if (!validPriorities(tour.config.placementPriority)) {
                 tour.config.placementPriority = service.config.placementPriority;
@@ -161,89 +160,71 @@
             };
 
             toggleElements(true, tour);
-            doStep();
-
-            return service.current.promise.promise;
+            return doStep();
         }
 
         function toggleElements(state, tour) {
-
-            var d = $q.defer();
-
             if (state) {
                 service.box = angular.element($compile('<nz-tour class="hidden"></nz-tour>')(service));
                 angular.element(service.body).append(service.box);
                 service.box.removeClass('hidden');
-                d.resolve();
+                return $q.when();
             } else {
                 service.box.addClass('hidden');
-                $timeout(function() {
+                return $timeout(function() {
                     service.cleanup();
-                    d.resolve();
                 }, service.current.tour.config.animationDuration);
             }
-            return d.promise;
+           // return $q.when(null);
         }
 
-        function doStep() {
-            return doBefore()
+        function doStep(direction) {
+            return doBefore(direction)
                 .then(broadcastStep);
         }
 
-        function doBefore() {
-            var d = $q.defer();
+        function doBefore(direction) {
             if (service.current.tour.steps[service.current.step].before) {
-                return service.current.tour.steps[service.current.step].before();
+                return service.current.tour.steps[service.current.step].before(direction);
             }
-            d.resolve();
-            return d.promise;
+            return $q.when(null);
         }
 
         function broadcastStep() {
-            var d = $q.defer();
             service.$broadcast('step', service.current.step);
-            d.resolve();
-            return d.promise;
+            return $q.when(null);
         }
 
-
-
-        function doAfter() {
-            var d = $q.defer();
+        function doAfter(direction) {
             if (service.current.tour.steps[service.current.step].after) {
-                return service.current.tour.steps[service.current.step].after();
+                return service.current.tour.steps[service.current.step].after(direction);
             }
-            d.resolve();
-            return d.promise;
+            return $q.when(null);
         }
 
         function checkHasNext() {
-            var d = $q.defer();
-            if (service.current.step == service.current.tour.steps.length - 1) {
-                finish();
-                d.reject();
+            if (service.current.step === service.current.tour.steps.length - 1) {
+                return finish()
+                    .then(function(){
+                        return $q.reject('No more steps left');
+                    });
             }
-            d.resolve();
-            return d.promise;
+            return $q.when(null);
         }
 
-
-
         function finish() {
-            toggleElements(false)
+            return toggleElements(false)
                 .then(function() {
-                    service.current.promise.resolve();
+                    var func = service.current.tour.config.onComplete;
                     service.current = false;
+                    if(func) {     
+                        return func();
+                    } 
                     return true;
                 });
         }
 
-
         function hide() {
-
-        }
-
-        function show() {
 
         }
 
@@ -277,7 +258,7 @@
         }
     }]);
 
-    module.directive('nzTour', ["$q", "$timeout", "$window", function($q, $timeout, $window) {
+    module.directive('nzTour', ["$q", function($q) {
         return {
             template: [
                 '<div id="nzTour-box-wrap">',
@@ -290,19 +271,20 @@
                 '           <div id="nzTour-inner-content"></div>',
                 '        </div>',
                 '        <div id="nzTour-actions">',
-                '            <button id="nzTour-previous" ng-show="view.step > 0" ng-click="previous()" class="ng-hide">{{view.previousText}}</button>',
-                '            <button id="nzTour-next" ng-show="view.step >= 0" ng-click="next()" class="success" class="ng-hide">{{view.nextText}}</button>',
+                '            <button id="nzTour-previous" ng-show="view.step > 0 && view.showPrevious" ng-click="previous()">{{view.previousText}}</button>',
+                '            <button id="nzTour-next" ng-show="view.step >= 0 && view.showNext" ng-click="next()" class="success">{{view.nextText}}</button>',
                 '        </div>',
                 '    </div>',
                 '</div>',
                 '<div class="nzTour-masks" ng-show="current.tour.config.mask.visible" ng-click="tryStop()">',
-                '    <div class="mask top"></div>',
-                '    <div class="mask right"></div>',
-                '    <div class="mask bottom"></div>',
-                '    <div class="mask left"></div>',
-                '</div>',
+                '    <div class="mask top" ng-style="{\'background-color\': current.tour.config.mask.color}"></div>',
+                '    <div class="mask right" ng-style="{\'background-color\': current.tour.config.mask.color}"></div>',
+                '    <div class="mask bottom" ng-style="{\'background-color\': current.tour.config.mask.color}"></div>',
+                '    <div class="mask left" ng-style="{\'background-color\': current.tour.config.mask.color}"></div>',
+                '    <div class="mask center"></div>',
+                '</div>'
             ].join(' '),
-            link: function($scope, el, attrs) {
+            link: function($scope, el) {
 
                 // $scope is the actual nzTour service :)
 
@@ -310,12 +292,11 @@
                     target = false,
                     seeking = false,
                     margin = 15,
-                    vMargin = margin + 'px 0',
-                    hMargin = '0 ' + margin + 'px',
                     maxHeight = 120,
                     maxWidth = 250,
                     scrolling = false,
-                    maskTransitions = true;
+                    maskTransitions = true,
+                    currentStep = null;
 
                 var els = {
                     window: angular.element(window),
@@ -334,17 +315,16 @@
                     masks_right: el.find('.nzTour-masks .right'),
                     masks_bottom: el.find('.nzTour-masks .bottom'),
                     masks_left: el.find('.nzTour-masks .left'),
+                    masks_center: el.find('.nzTour-masks .center'),
                     scroll: angular.element(config.scrollBox),
-                    target: false,
+                    target: false
                 };
 
                 var dims = {
                     window: {},
                     scroll: {},
-                    target: {},
+                    target: {}
                 };
-
-
 
                 // Turn on Transitions
                 toggleMaskTransitions(true);
@@ -359,13 +339,6 @@
                     margin = 7;
                 }
 
-                // Mask Background Color
-                els.masks_top.add(els.masks_right).add(els.masks_bottom).add(els.masks_left).css({
-                    'background-color': config.mask.color
-                });
-
-
-
                 // Step Update Listener
                 var stepUpdater = $scope.$on('step', updateStep);
                 // Thottle for 60fps
@@ -373,16 +346,18 @@
                 var stopScrollingDebounced = $scope.debounce(stopScrolling, 100);
 
                 // Key Bindings
-                els.window.bind('keydown', keyDown);
-                // window scroll, resize bindings
-                els.window.bind('resize scroll', onWindowScrollDebounced);
-                window.addWheelListener(window, onWindowScrollDebounced);
-                // content scroll bindings
-                els.content.bind('scroll', onBoxScroll);
-                window.addWheelListener(els.content[0], onBoxScroll);
-                // mask scroll bindings
-                if (config.mask.scrollThrough === false) {
-                    window.addWheelListener(els.masks_wrap, stopMaskScroll);
+                if(config.disableHotkeys == false) {
+                    els.window.bind('keydown', keyDown);
+                    // window scroll, resize bindings
+                    els.window.bind('resize scroll', onWindowScrollDebounced);
+                    window.addWheelListener(window, onWindowScrollDebounced);
+                    // content scroll bindings
+                    els.content.bind('scroll', onBoxScroll);
+                    window.addWheelListener(els.content[0], onBoxScroll);
+                    // mask scroll bindings
+                    if (config.mask.scrollThrough === false) {
+                        window.addWheelListener(els.masks_wrap[0], stopMaskScroll);
+                    }
                 }
 
                 // Event Cleanup
@@ -400,12 +375,6 @@
                     els = {};
                     el.remove();
                 };
-
-                window.tanner = $scope;
-
-
-
-
 
                 // Events
 
@@ -430,9 +399,11 @@
                             prevent(e);
                             return;
                         case 27:
-                            $scope.stop();
-                            prevent(e);
-                            return;
+                            if (!config.disableEscExit) {
+                                $scope.stop();
+                                prevent(e);
+                                return;
+                            }
                         case 38:
                         case 40:
                             onWindowScrollDebounced();
@@ -477,11 +448,10 @@
                     var up = delta > 0;
                     var scrollTop = els.content.scrollTop();
 
-
                     if (up && !scrollTop) {
                         return prevent(e);
                     }
-                    if (!up && (innerContent.height() - content.height() == scrollTop)) {
+                    if (!up && (els.innerContent.height() - els.content.height() == scrollTop)) {
                         return prevent(e);
                     }
                 }
@@ -502,7 +472,7 @@
                     toggleMaskTransitions(false);
                     stopScrollingDebounced();
 
-                    findTarget()
+                    findTarget(currentStep)
                         .then(getDimensions)
                         .then(scrollToTarget)
                         .then(getDimensions)
@@ -515,15 +485,16 @@
                 }
 
                 function updateStep(e, step) {
-
                     els.target = false;
                     var steps = $scope.current.tour.steps;
-
+                    currentStep = step;
                     $scope.view = {
                         step: step,
                         length: steps.length,
                         previousText: config.previousText,
-                        nextText: step == steps.length - 1 ? config.finishText : config.nextText
+                        nextText: step == steps.length - 1 ? config.finishText : config.nextText,
+                        showNext: steps[step].showNext === undefined ? config.showNext : steps[step].showNext,
+                        showPrevious: steps[step].showPrevious === undefined ? config.showPrevious : steps[step].showPrevious
                     };
                     //Don't mess around with angular sanitize for now. Add compile and sanitize later...
                     els.innerContent.html(steps[step].content);
@@ -543,15 +514,7 @@
                         });
                 }
 
-
-
-
-
-
-
-
                 // Internal Functions
-
                 function findTarget(step) {
                     var d = $q.defer();
 
@@ -571,30 +534,24 @@
 
                 function getDimensions() {
 
-                    var d = $q.defer();
-
                     if (!els.target) {
-                        d.resolve();
-                        return d.promise;
+                        return $q.when(null);
                     }
 
                     // Window
-
                     dims.window = {
                         width: els.window.width(),
-                        height: els.window.height(),
+                        height: els.window.height()
                     };
 
-
-                    // Scrollbox 
-
+                    // Scrollbox
                     dims.scroll = {
                         width: els.scroll.outerWidth(),
                         height: els.scroll.outerHeight(),
                         offset: els.scroll.offset(),
                         scroll: {
                             top: els.scroll.scrollTop(),
-                            left: els.scroll.scrollLeft(),
+                            left: els.scroll.scrollLeft()
                         }
                     };
 
@@ -610,13 +567,11 @@
                     dims.scroll.offset.fromBottom = dims.window.height - dims.scroll.offset.top - dims.scroll.height;
                     dims.scroll.offset.fromRight = dims.window.width - dims.scroll.offset.left - dims.scroll.width;
 
-
                     // Target
-
                     dims.target = {
                         width: els.target.outerWidth(),
                         height: els.target.outerHeight(),
-                        offset: els.target.offset(),
+                        offset: els.target.offset()
                     };
 
                     // For an html/body scrollbox
@@ -643,28 +598,22 @@
                             toBottom: dims.target.offset.toBottom + margin,
                             toRight: dims.target.offset.toRight + margin,
                             fromBottom: dims.target.offset.fromBottom - margin,
-                            fromRight: dims.target.offset.fromRight - margin,
+                            fromRight: dims.target.offset.fromRight - margin
                         },
                         height: dims.target.height + margin * 2,
                         right: dims.target.offset.fromRight + margin * 2
                     };
 
-                    d.resolve();
-
-                    return d.promise;
+                    return $q.when(null);
                 }
 
                 function scrollToTarget() {
-                    var d = $q.defer();
-
                     if (!els.target) {
-                        d.resolve();
-                        return d.promise;
+                        return $q.when(null);
                     }
 
                     var newScrollTop = findScrollTop();
-
-
+                    var d = $q.defer();
                     if (!newScrollTop) {
                         d.resolve();
                     } else {
@@ -678,7 +627,6 @@
 
                     return d.promise;
                 }
-
 
                 function findScrollTop() {
                     // Is element to large to fit?
@@ -709,7 +657,6 @@
                 }
 
                 function moveToTarget() {
-
                     return $q.all([
                         moveBox(),
                         moveMasks()
@@ -717,10 +664,7 @@
                 }
 
                 function moveBox() {
-
                     var step = $scope.current.tour.steps[$scope.current.step];
-
-                    var d = $q.defer();
 
                     // Default Position?
                     if (!els.target) {
@@ -739,21 +683,16 @@
                     angular.forEach((step.placementPriority || config.placementPriority), function(priority) {
                         if (!placed && placementOptions[priority]()) {
                             placed = true;
-                            d.resolve();
                         }
                     });
 
                     if (!placed) {
                         placeInside('bottom', 'center');
-                        d.resolve();
-                        return;
                     }
 
-                    return d.promise;
-
+                    return $q.when(null);
 
                     // Placement Priorities
-
                     function bottom() {
                         // Can Below?
                         if (dims.target.margins.offset.fromBottom > maxHeight) {
@@ -777,7 +716,6 @@
                     function right() {
                         // Can Right?
                         if (dims.target.margins.offset.fromRight > maxWidth) {
-
                             // Is Element to Large to fit?
                             if (dims.target.margins.height > dims.scroll.height) {
 
@@ -855,15 +793,8 @@
                         return false;
                     }
 
-
-
-
-
-
                     // Placement functions
-
                     function placeVertically(v, h) {
-
                         var top;
                         var left;
                         var translateX;
@@ -878,7 +809,6 @@
                             top = dims.target.margins.offset.toBottom;
                             tipY = 'top';
                             translateY = '0';
-
                         }
 
                         if (h == 'right') {
@@ -895,15 +825,13 @@
                         els.wrap.css({
                             left: left + 'px',
                             top: top + 'px',
-                            transform: 'translate(' + translateX + ',' + translateY + ')',
+                            transform: 'translate(' + translateX + ',' + translateY + ')'
                         });
 
                         els.tip.attr('class', 'vertical ' + tipY + ' ' + h);
-
                     }
 
                     function placeHorizontally(h, v, fixed) {
-
                         var top;
                         var left;
                         var translateX;
@@ -937,7 +865,7 @@
                         els.wrap.css({
                             left: left + 'px',
                             top: top + 'px',
-                            transform: 'translate(' + translateX + ',' + translateY + ')',
+                            transform: 'translate(' + translateX + ',' + translateY + ')'
                         });
 
                         els.tip.attr('class', 'horizontal ' + tipX + ' ' + v);
@@ -945,7 +873,6 @@
                     }
 
                     function placeInside(v, h) {
-
                         var top;
                         var left;
                         var translateY;
@@ -973,7 +900,7 @@
                         els.wrap.css({
                             left: left + 'px',
                             top: top + 'px',
-                            transform: 'translate(' + translateX + ',' + translateY + ')',
+                            transform: 'translate(' + translateX + ',' + translateY + ')'
                         });
 
                         els.tip.attr('class', 'hidden');
@@ -992,12 +919,9 @@
                 }
 
                 function moveMasks() {
-
-                    var d = $q.defer();
-
                     if (!els.target) {
                         els.masks_top.css({
-                            height: '0px'
+                            height: config.mask.visibleOnNoTarget ? '100%' : '0px'
                         });
                         els.masks_bottom.css({
                             height: '0px'
@@ -1012,37 +936,48 @@
                             height: '100%',
                             width: '0px'
                         });
-                        return;
+                        return $q.when(null);
                     }
 
+                    var margin = config.highlightMargin ? config.highlightMargin : 0;
+                    
                     els.masks_top.css({
-                        height: dims.target.offset.top + 'px',
+                        height: dims.target.offset.top - margin + 'px',
                         top: dims.target.offset.top < 0 ? dims.target.offset.top + 'px' : 0
                     });
                     els.masks_bottom.css({
-                        height: dims.target.offset.fromBottom + 'px',
+                        height: dims.target.offset.fromBottom - margin + 'px',
                         bottom: dims.target.offset.fromBottom < 0 ? dims.target.offset.fromBottom + 'px' : 0
                     });
                     els.masks_left.css({
-                        top: dims.target.offset.top + 'px',
-                        height: dims.target.height + 'px',
-                        width: dims.target.offset.left + 'px'
+                        top: dims.target.offset.top - margin + 'px',
+                        height: dims.target.height + 2*margin + 'px',
+                        width: dims.target.offset.left - margin + 'px'
                     });
                     els.masks_right.css({
-                        top: dims.target.offset.top + 'px',
-                        height: dims.target.height + 'px',
-                        width: dims.target.offset.fromRight + 'px'
+                        top: dims.target.offset.top - margin + 'px',
+                        height: dims.target.height + 2*margin + 'px',
+                        width: dims.target.offset.fromRight - margin + 'px'
                     });
 
-                    d.resolve();
+                    if (config.disableInteraction) {
+                        els.masks_center.css({
+                            height: dims.target.height + 2*margin + 'px',
+                            top: dims.target.offset.top - margin + 'px',
+                            left: dims.target.offset.left - margin + 'px',
+                            right: dims.target.offset.fromRight - margin + 'px',
+                            backgroundColor: 'transparent'
+                        });    
+                    }
+                    
 
-                    return d.promise;
+                    return $q.when(null);
                 }
             }
         };
     }]);
 
-    window.angular.extendDeep = function extendDeep(dst) {
+    function extendDeep(dst) {
         angular.forEach(arguments, function(obj) {
             if (obj !== dst) {
                 angular.forEach(obj, function(value, key) {
@@ -1061,7 +996,7 @@
         return;
     }
 
-    var prefix = "",
+    var prefix = '',
         _addEventListener, onwheel, support;
 
     // detect event model
@@ -1136,10 +1071,4 @@
         // it's time to fire the callback
         return callback(event);
     }
-
-
 })();
-
-
-
-//
