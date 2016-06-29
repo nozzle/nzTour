@@ -500,8 +500,7 @@
                     var stepHtml =  steps[step].content;
                     // Compile the step definition html so ng-click works as expected.
                     var compiledHtml = $compile(stepHtml)($scope);
-                    els.innerContent.html('');
-                    els.innerContent.append(compiledHtml);
+                    els.innerContent.html(compiledHtml);
 
                     // Scroll Back to the top
                     els.content.scrollTop(0);
