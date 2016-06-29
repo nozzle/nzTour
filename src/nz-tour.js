@@ -259,7 +259,7 @@
         }
     });
 
-    module.directive('nzTour', function($q) {
+    module.directive('nzTour', function($q, $compile) {
         return {
             template: [
                 '<div id="nzTour-box-wrap">',
@@ -497,8 +497,11 @@
                         showNext: steps[step].showNext === undefined ? config.showNext : steps[step].showNext,
                         showPrevious: steps[step].showPrevious === undefined ? config.showPrevious : steps[step].showPrevious
                     };
-                    //Don't mess around with angular sanitize for now. Add compile and sanitize later...
-                    els.innerContent.html(steps[step].content);
+                    var stepHtml =  steps[step].content;
+                    // Compile the step definition html so ng-click works as expected.
+                    var compiledHtml = $compile(stepHtml)($scope);
+                    els.innerContent.html(compiledHtml);
+
                     // Scroll Back to the top
                     els.content.scrollTop(0);
 
