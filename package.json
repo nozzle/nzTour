@@ -19,7 +19,7 @@
   "homepage": "https://github.com/nozzle/nzTour",
   "dependencies": {
     "gulp": "^3.8.11",
-    "gulp-ng-annotate": "^0.5.2",
+    "gulp-ng-annotate": "^2.0.0",
     "gulp-rename": "^1.2.0",
     "gulp-stylus": "^2.0.1",
     "gulp-uglifyjs": "^0.6.0",

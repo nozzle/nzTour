@@ -1,36 +1,36 @@
 {
-    "name": "nz-tour",
-    "version": "1.0.2",
-    "description": "Touring and on-boarding made simple for AngularJS",
-    "main": [
-        "dist/nz-tour.min.js",
-        "dist/nz-tour.min.css"
-    ],
-    "license": "MIT",
-    "ignore": [
-        ".jshintrc",
-        "**/*.txt",
-        "**/*.html",
-        "README.md",
-        "assets",
-        "**/.*",
-        "node_modules",
-        "test",
-        "tests",
-        "bower_components"
-    ],
-    "dependencies": {
-        "angular": "~1.2.8"
-    },
-    "homepage": "https://github.com/nozzle/nzTour",
-    "authors": [
-        "tannerlinsley"
-    ],
-    "keywords": [
-        "tour",
-        "angular",
-        "angularjs",
-        "onboard",
-        "intro"
-    ]
+  "name": "nz-tour",
+  "version": "1.1.0",
+  "description": "Touring and on-boarding made simple for AngularJS",
+  "main": [
+    "dist/nz-tour.js",
+    "dist/nz-tour.css"
+  ],
+  "license": "MIT",
+  "ignore": [
+    ".jshintrc",
+    "**/*.txt",
+    "**/*.html",
+    "README.md",
+    "assets",
+    "**/.*",
+    "node_modules",
+    "test",
+    "tests",
+    "bower_components"
+  ],
+  "dependencies": {
+    "angular": "^1.2.8"
+  },
+  "homepage": "https://github.com/nozzle/nzTour",
+  "authors": [
+    "tannerlinsley"
+  ],
+  "keywords": [
+    "tour",
+    "angular",
+    "angularjs",
+    "onboard",
+    "intro"
+  ]
 }
