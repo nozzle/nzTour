@@ -293,8 +293,8 @@
                     target = false,
                     seeking = false,
                     margin = 15,
-                    maxHeight = 120,
-                    maxWidth = 250,
+                    maxHeight = (config.maxHeight)?config.maxHeight: 120,
+                    maxWidth = (config.maxWidth)?config.maxWidth: 250,
                     scrolling = false,
                     maskTransitions = true,
                     currentStep = null;
