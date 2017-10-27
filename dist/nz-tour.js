@@ -1002,7 +1002,7 @@
     }
 
     var prefix = '',
-        _addEventListener, onwheel, support;
+        _addEventListener, onwheel, support, _removeEventListener;
 
     // detect event model
     if (window.addEventListener) {
