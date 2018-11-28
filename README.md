@@ -1,6 +1,12 @@
+# ⛔️ DEPRECATED
+This repo is no longer being maintained (issues and pull requests are not being monitored). Consider using https://github.com/tourjs/Tour instead. If you would like to take over, please open an issue.
+
+---
+
 # nzTour
 
 [![Join the chat at https://gitter.im/nozzle/nzTour](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/nozzle/nzTour?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Touring and on-boarding made simple for AngularJS.
 
 ## [Awesome Demo](http://nozzle.github.io/nzTour)
