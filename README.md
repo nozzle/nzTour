@@ -98,29 +98,29 @@ var tour = {
 
 ## API
 
-####.start(tour) - Starts a Tour
+#### .start(tour) - Starts a Tour
 Params:
 *	*tour*: Tour Object
 
 Returns:
 *	Promise that resolves when the tour is finished and rejected when aborted.
 
-####.stop() - Stops a Tour
+#### .stop() - Stops a Tour
 Returns:
 *	Promise that resolves when the tour is stopped.
 
-####.pause() - Pauses a Tour
+#### .pause() - Pauses a Tour
 Returns:
 *	Promise that resolves when the tour is paused and hidden.
 
-####.next() - Goes to the next step in the current tour
+#### .next() - Goes to the next step in the current tour
 Returns:
 *	Promise that resolves when the next step is reached
 
-####.previous() - Goes to the previous step in the current tour
+#### .previous() - Goes to the previous step in the current tour
 *	Promise that resolves when the previous step is reached
 
-####.gotoStep(step): - Goes to a specific step in the tour
+#### .gotoStep(step): - Goes to a specific step in the tour
 Params:
 *	*step*: The number of the step starting at 1,2,3...
 
